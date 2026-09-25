@@ -26,6 +26,14 @@ def creer_carte_memoire(hauteur, largeur):
         carte.append(ligne)
     return carte
 
+def initialiser_memoire(carte, pos_robot, pos_residents, pos_dict, pos_armoire):
+    carte[pos_robot[0]][pos_robot[1]] = 'R'
+    carte[pos_dict[0]][pos_dict[1]] = 'D'
+    carte[pos_armoire[0]][pos_armoire[1]] = 'A'
+    for pos_resident in pos_residents:
+        carte[pos_resident[0]][pos_resident[1]] = 'P'
+    return carte
+
 
 if __name__ == "__main__":
     import sys
@@ -36,5 +44,6 @@ if __name__ == "__main__":
     print("Position des residents", pos_residents)
     print("Position du dictionnaire : ", pos_dict)
     print("Position de l'armoire : ", pos_armoire)
-    print(creer_carte_memoire(hauteur, largeur))
+    carte = creer_carte_memoire(hauteur, largeur)
+    print(initialiser_memoire(carte, pos_robot, pos_residents, pos_dict, pos_armoire))
 
