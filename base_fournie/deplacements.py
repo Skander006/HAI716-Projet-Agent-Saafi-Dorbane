@@ -1,5 +1,6 @@
 #Moteur de déplacement
 import json
+import sys
 from math import *
 
 #Chargement de l'appartement pour récuperer sa taille exacte
@@ -45,7 +46,7 @@ def perception(grille, position):
     perception["N"] = grille[ligne-1][colonne]
     perception["S"] = grille[ligne+1][colonne]
     perception["E"] = grille[ligne][colonne+1]
-    perception["W"] = grille[ligne][colonne-1]
+    perception["O"] = grille[ligne][colonne-1]
     return perception
 
 #Mise à jour après perception des alentours
@@ -55,9 +56,10 @@ def update_memoire(perception, memoire, position):
     memoire[ligne-1][colonne] = perception["N"]
     memoire[ligne+1][colonne] = perception["S"]
     memoire[ligne][colonne+1] = perception["E"]
-    memoire[ligne][colonne-1] = perception["W"]
+    memoire[ligne][colonne-1] = perception["O"]
     return memoire
 
+#Fonction pour calculer le chemin entre le robot et les autres points
 def calcul_chemin(carte_memoire, position_depart, position_arrivee):
     file = [position_depart]
     parents = {tuple(position_depart) : None}       #Ca on le met pour optimiser la recherche et ne pas tomber sur une case déjà visitée 
@@ -101,9 +103,36 @@ def calcul_chemin(carte_memoire, position_depart, position_arrivee):
 
     return chemin
 
+#Fonction pour deplacer le robot
+def deplacement(pos_actuelle, pos_suivante):  #Ici on ne fait pas le calcul de voisin (obstacles, etc) car on l'a déjà fait dans la fonction calcul_chemin
+    pos_actuelle = pos_suivante
+    return pos_actuelle
+
+#Fonction finale pour le deplacement
+def aller_vers(point, memoire, position_actuelle):
+    #Initialisation
+    appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement(sys.argv[1])
+    while position_actuelle != point:
+        #Perception
+        perception_memoire = perception(grille, position_actuelle)
+        #Update
+        memoire = update_memoire(perception_memoire, memoire, position_actuelle)
+        #Calculer BFS
+        chemin = calcul_chemin(memoire, position_actuelle, point)
+        if chemin is None:
+            print("Chemin impossible à trouver !")
+            break
+        print("Chemin à parcourir : ",chemin)
+        #Deplacement
+        prochain_point = chemin[1]
+        position_actuelle = deplacement(position_actuelle, prochain_point)
+
+    
+    return memoire, position_actuelle
+    
+    
 #Tests dans le main
 if __name__ == "__main__":
-    import sys
     appartement, hauteur, largeur,pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement(sys.argv[1])
     print("Hauteur : ",hauteur)
     print("Largeur : ",largeur)
@@ -112,11 +141,21 @@ if __name__ == "__main__":
     print("Position du dictionnaire : ", pos_dict)
     print("Position de l'armoire : ", pos_armoire)
     carte = creer_carte_memoire(hauteur, largeur)
-    perception = perception(grille, pos_robot)
-    carte_init = initialiser_memoire(carte, pos_robot, pos_residents, pos_dict, pos_armoire)
+    """
     print(carte_init)
     print("Perception actuelle : ",perception)
     carte_updated = update_memoire(perception, carte_init, pos_robot)
     print("Memoire mise à jour : ", carte_updated)
     print(calcul_chemin(carte_updated, pos_robot, pos_dict))
+    pos_suivante = calcul_chemin(carte_updated, pos_robot, pos_dict)[0]
+    print(deplacement(pos_robot, pos_suivante))
+    """
+    perception_robot = perception(grille, pos_robot)
+    carte_init = initialiser_memoire(carte, pos_robot, pos_residents, pos_dict, pos_armoire)
+    carte_updated = update_memoire(perception_robot, carte_init, pos_robot)
+    memoire, pos_actuelle = aller_vers(pos_armoire, carte_updated, pos_robot)
+    print(memoire, pos_actuelle)
+    memoire, pos_actuelle = aller_vers(pos_dict, carte_updated, pos_armoire)
+    print(memoire, pos_actuelle)
+
 
