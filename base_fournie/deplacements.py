@@ -38,7 +38,6 @@ def initialiser_memoire(carte, pos_robot, pos_residents, pos_dict, pos_armoire):
 def perception(grille, position):
     ligne = position[0]
     colonne = position[1]
-
     perception = {}
     perception["N"] = grille[ligne-1][colonne]
     perception["S"] = grille[ligne+1][colonne]
@@ -46,7 +45,14 @@ def perception(grille, position):
     perception["W"] = grille[ligne][colonne-1]
     return perception
 
-
+def update_memoire(perception, memoire, position):
+    ligne = position[0]
+    colonne = position[1]
+    memoire[ligne-1][colonne] = perception["N"]
+    memoire[ligne+1][colonne] = perception["S"]
+    memoire[ligne][colonne+1] = perception["E"]
+    memoire[ligne][colonne-1] = perception["W"]
+    return memoire
 if __name__ == "__main__":
     import sys
     appartement, hauteur, largeur,pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement(sys.argv[1])
@@ -58,6 +64,8 @@ if __name__ == "__main__":
     print("Position de l'armoire : ", pos_armoire)
     carte = creer_carte_memoire(hauteur, largeur)
     perception = perception(grille, pos_robot)
-    print(initialiser_memoire(carte, pos_robot, pos_residents, pos_dict, pos_armoire))
+    carte_init = initialiser_memoire(carte, pos_robot, pos_residents, pos_dict, pos_armoire)
+    print(carte_init)
     print("Perception actuelle : ",perception)
+    print("Memoire mise à jour : ", update_memoire(perception, carte_init, pos_robot))
 
