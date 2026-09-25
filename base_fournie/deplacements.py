@@ -8,7 +8,13 @@ def charger_appartement(chemin):
     
     hauteur = appartement["dimensions"]["hauteur"]
     largeur = appartement["dimensions"]["largeur"]
-    return appartement, hauteur, largeur
+    pos_robot = appartement["depart_robot"]
+    pos_residents = []
+    for resident in appartement["residents"]:
+        pos_residents.append(resident["position"])
+    pos_dict = appartement["dictionnaire"]["position"]
+    pos_armoire = appartement["armoire"]["position"]
+    return appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire
 
 
 def creer_carte_memoire(hauteur, largeur):
@@ -21,11 +27,14 @@ def creer_carte_memoire(hauteur, largeur):
     return carte
 
 
-
 if __name__ == "__main__":
     import sys
-    appartement, hauteur, largeur = charger_appartement(sys.argv[1])
+    appartement, hauteur, largeur,pos_robot, pos_residents, pos_dict, pos_armoire = charger_appartement(sys.argv[1])
     print("Hauteur : ",hauteur)
     print("Largeur : ",largeur)
+    print("Position Robot : ",pos_robot)
+    print("Position des residents", pos_residents)
+    print("Position du dictionnaire : ", pos_dict)
+    print("Position de l'armoire : ", pos_armoire)
     print(creer_carte_memoire(hauteur, largeur))
 
