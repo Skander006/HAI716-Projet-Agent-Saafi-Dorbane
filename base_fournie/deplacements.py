@@ -14,7 +14,8 @@ def charger_appartement(chemin):
         pos_residents.append(resident["position"])
     pos_dict = appartement["dictionnaire"]["position"]
     pos_armoire = appartement["armoire"]["position"]
-    return appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire
+    grille = appartement["grille"]
+    return appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire, grille
 
 
 def creer_carte_memoire(hauteur, largeur):
@@ -34,10 +35,21 @@ def initialiser_memoire(carte, pos_robot, pos_residents, pos_dict, pos_armoire):
         carte[pos_resident[0]][pos_resident[1]] = 'P'
     return carte
 
+def perception(grille, position):
+    ligne = position[0]
+    colonne = position[1]
+
+    perception = {}
+    perception["N"] = grille[ligne-1][colonne]
+    perception["S"] = grille[ligne+1][colonne]
+    perception["E"] = grille[ligne][colonne+1]
+    perception["W"] = grille[ligne][colonne-1]
+    return perception
+
 
 if __name__ == "__main__":
     import sys
-    appartement, hauteur, largeur,pos_robot, pos_residents, pos_dict, pos_armoire = charger_appartement(sys.argv[1])
+    appartement, hauteur, largeur,pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement(sys.argv[1])
     print("Hauteur : ",hauteur)
     print("Largeur : ",largeur)
     print("Position Robot : ",pos_robot)
@@ -45,5 +57,7 @@ if __name__ == "__main__":
     print("Position du dictionnaire : ", pos_dict)
     print("Position de l'armoire : ", pos_armoire)
     carte = creer_carte_memoire(hauteur, largeur)
+    perception = perception(grille, pos_robot)
     print(initialiser_memoire(carte, pos_robot, pos_residents, pos_dict, pos_armoire))
+    print("Perception actuelle : ",perception)
 
