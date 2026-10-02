@@ -76,3 +76,64 @@ def chemin_vers(depart, arrivee):
             mouvements.append("O")
 
     return mouvements
+
+def fouiller_armoire(emotion, intensite, armoire):
+    """Simule le sélecteur qui visite les casiers candidats, dans l'ordre de
+    priorité, jusqu'à trouver un objet. Retourne (objet, casier_choisi, actions).
+    Si rien n'est trouvé : (None, None, actions)."""
+    candidats = casiers_candidats(emotion, intensite)
+    candidats_tries = trier_candidats(candidats)
+
+    position_actuelle = tuple(armoire["casier_depart"])
+    actions = []
+
+    for candidat in candidats_tries:
+        cible = position_casier(candidat["emotion"], candidat["intensite"])
+        mouvements = chemin_vers(position_actuelle, cible)
+
+        for direction in mouvements:
+            actions.append(("CHERCHER", direction, None))
+        position_actuelle = cible
+
+        contenu = None
+        for casier in armoire["casiers"]:
+            if casier["emotion"] == candidat["emotion"] and casier["intensite"] == candidat["intensite"]:
+                contenu = casier["objet"]
+                break
+
+        if actions:
+            actions[-1] = (actions[-1][0], actions[-1][1], contenu)
+
+        if contenu is not None:
+            candidat["ligne"] = cible[0]
+            candidat["colonne"] = cible[1]
+            return contenu, candidat, actions
+
+    return None, None, actions
+
+
+def determiner_repli(candidat):
+    if candidat["distance_emotion"] == 0 and candidat["ecart_intensite"] == 0:
+        return "aucun"
+    if candidat["distance_emotion"] == 0:
+        return "intensite"
+    if candidat["distance_emotion"] == 1:
+        return "voisine_1"
+    return "voisine_2"
+
+
+if __name__ == "__main__":
+    armoire = rio.charger_armoire("donnees/armoire_standard.json")
+
+    print("=== Cas 1 : tiroir exact garni (tristesse/moyenne) ===")
+    objet, casier, actions = fouiller_armoire("tristesse", "moyenne", armoire)
+    print("objet:", objet, "| repli:", determiner_repli(casier), "| actions:", len(actions))
+
+    print("\n=== Cas 2 : repli necessaire (surprise/forte, colonne vide) ===")
+    objet, casier, actions = fouiller_armoire("surprise", "forte", armoire)
+    print("objet:", objet, "| repli:", determiner_repli(casier), "| actions:", len(actions))
+
+    print("\n=== Cas 3 : echec, armoire totalement vide ===")
+    armoire_vide = {"casier_depart": [1, 0], "casiers": []}
+    objet, casier, actions = fouiller_armoire("tristesse", "moyenne", armoire_vide)
+    print("objet:", objet, "| casier:", casier, "| actions:", len(actions))
