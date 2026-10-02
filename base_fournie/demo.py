@@ -32,10 +32,8 @@ def main(argv):
     try:
         carte = rio.charger_carte(chemin_carte)
         scenario = rio.charger_scenario(chemin_scenario)
-        dictionnaire = rio.charger_dictionnaire(
-            dossier_donnees / "dictionnaire.json")
-        armoire = rio.charger_armoire(
-            dossier_donnees / f"{scenario['armoire']}.json")
+        dictionnaire = rio.charger_dictionnaire(dossier_donnees / "dictionnaire.json")
+        armoire = rio.charger_armoire(dossier_donnees / f"{scenario['armoire']}.json")
     except rio.ErreurFichier as err:
         print(f"erreur de chargement : {err}", file=sys.stderr)
         return 1
