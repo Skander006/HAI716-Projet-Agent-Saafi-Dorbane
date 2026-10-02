@@ -87,7 +87,7 @@ def calcul_chemin(carte_memoire, position_depart, position_arrivee):
             voisin_tuple = tuple(voisin)
             if voisin_tuple in parents:
                 continue
-            parents[voisin_tuple] = position
+            parents[voisin_tuple] = tuple(position)
             file.append(voisin)
 
     if tuple(position_arrivee) not in parents:
@@ -109,7 +109,7 @@ def deplacement(pos_actuelle, pos_suivante):  #Ici on ne fait pas le calcul de v
     return pos_actuelle
 
 #Fonction finale pour le deplacement
-def aller_vers(point, memoire, position_actuelle):
+def aller_vers(memoire, position_actuelle, point):
     #Initialisation
     appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement(sys.argv[1])
     while position_actuelle != point:
@@ -153,9 +153,9 @@ if __name__ == "__main__":
     perception_robot = perception(grille, pos_robot)
     carte_init = initialiser_memoire(carte, pos_robot, pos_residents, pos_dict, pos_armoire)
     carte_updated = update_memoire(perception_robot, carte_init, pos_robot)
-    memoire, pos_actuelle = aller_vers(pos_armoire, carte_updated, pos_robot)
+    memoire, pos_actuelle = aller_vers(carte_updated, pos_robot, pos_armoire)
     print(memoire, pos_actuelle)
-    memoire, pos_actuelle = aller_vers(pos_dict, carte_updated, pos_armoire)
+    memoire, pos_actuelle = aller_vers(memoire, pos_armoire, pos_dict)
     print(memoire, pos_actuelle)
 
 
