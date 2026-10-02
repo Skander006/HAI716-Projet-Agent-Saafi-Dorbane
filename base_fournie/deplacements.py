@@ -6,7 +6,7 @@ from math import *
 #Chargement de l'appartement pour récuperer sa taille exacte
 def charger_appartement(chemin):
     with open(chemin, "r", encoding="utf-8") as fichier:
-        appartement = json.load(fichier);
+        appartement = json.load(fichier)
     
     hauteur = appartement["dimensions"]["hauteur"]
     largeur = appartement["dimensions"]["largeur"]
