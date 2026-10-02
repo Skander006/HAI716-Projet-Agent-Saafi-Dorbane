@@ -48,4 +48,31 @@ def cle_de_tri(candidat):
 
 def trier_candidats(candidats):
     return sorted(candidats, key=cle_de_tri)
+def position_casier(emotion, intensite):
+    ligne = ORDRE_INTENSITES.index(intensite)
+    colonne = ORDRE_EMOTIONS.index(emotion)
+    return (ligne, colonne)
 
+
+def chemin_vers(depart, arrivee):
+    l1, c1 = depart
+    l2, c2 = arrivee
+    mouvements = []
+
+    while l1 != l2:
+        if l2 > l1:
+            mouvements.append("S")
+            l1 += 1
+        else:
+            mouvements.append("N")
+            l1 -= 1
+
+    a = (c2 - c1) % 8
+    if a <= 8 - a:
+        for _ in range(a):
+            mouvements.append("E")
+    else:
+        for _ in range(8 - a):
+            mouvements.append("O")
+
+    return mouvements
