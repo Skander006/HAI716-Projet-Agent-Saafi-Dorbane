@@ -37,4 +37,15 @@ def casiers_candidats(emotion, intensite):
             })
 
     return candidats
+def cle_de_tri(candidat):
+    return (
+        candidat["distance_emotion"],
+        candidat["ecart_intensite"],
+        candidat["rang_intensite"],
+        candidat["sens"],
+    )
+
+
+def trier_candidats(candidats):
+    return sorted(candidats, key=cle_de_tri)
 
