@@ -1,0 +1,50 @@
+{
+  "format": "robot-reconfort/carte",
+  "version": 1,
+  "nom": "test_replanification",
+  "dimensions": {
+    "hauteur": 5,
+    "largeur": 9
+  },
+  "legende": {
+    "#": "mur",
+    ".": "libre",
+    "R": "depart du robot",
+    "A": "armoire",
+    "D": "dictionnaire",
+    "P": "resident"
+  },
+  "grille": [
+    "#########",
+    "#R.#P#..#",
+    "#...#.###",
+    "#A..D.#.#",
+    "#########"
+  ],
+  "depart_robot": [
+    1,
+    1
+  ],
+  "armoire": {
+    "position": [
+      3,
+      1
+    ]
+  },
+  "dictionnaire": {
+    "position": [
+      3,
+      4
+    ]
+  },
+  "residents": [
+    {
+      "id": "R1",
+      "nom": "Justin",
+      "position": [
+        1,
+        4
+      ]
+    }
+  ]
+}

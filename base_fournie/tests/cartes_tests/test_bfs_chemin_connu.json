@@ -1,0 +1,50 @@
+{
+  "format": "robot-reconfort/carte",
+  "version": 1,
+  "nom": "test_bfs_chemin_connu",
+  "dimensions": {
+    "hauteur": 5,
+    "largeur": 6
+  },
+  "legende": {
+    "#": "mur",
+    ".": "libre",
+    "R": "depart du robot",
+    "A": "armoire",
+    "D": "dictionnaire",
+    "P": "resident"
+  },
+  "grille": [
+    "######",
+    "#R..##",
+    "#..P.#",
+    "#AD..#",
+    "######"
+  ],
+  "depart_robot": [
+    1,
+    1
+  ],
+  "armoire": {
+    "position": [
+      3,
+      1
+    ]
+  },
+  "dictionnaire": {
+    "position": [
+      3,
+      2
+    ]
+  },
+  "residents": [
+    {
+      "id": "R1",
+      "nom": "Justin",
+      "position": [
+        2,
+        3
+      ]
+    }
+  ]
+}

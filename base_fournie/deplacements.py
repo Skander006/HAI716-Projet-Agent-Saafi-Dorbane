@@ -109,9 +109,9 @@ def deplacement(pos_actuelle, pos_suivante):  #Ici on ne fait pas le calcul de v
     return pos_actuelle
 
 #Fonction finale pour le deplacement
-def aller_vers(memoire, position_actuelle, point):
+def aller_vers(memoire, position_actuelle, point, chemin):
     #Initialisation
-    appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement(sys.argv[1])
+    appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement(chemin)
     while position_actuelle != point:
         #Perception
         perception_memoire = perception(grille, position_actuelle)
@@ -121,7 +121,7 @@ def aller_vers(memoire, position_actuelle, point):
         chemin = calcul_chemin(memoire, position_actuelle, point)
         if chemin is None:
             print("Chemin impossible à trouver !")
-            break
+            return None
         print("Chemin à parcourir : ",chemin)
         #Deplacement
         prochain_point = chemin[1]
