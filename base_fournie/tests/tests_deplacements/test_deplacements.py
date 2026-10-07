@@ -1,12 +1,12 @@
 import sys
 from ftplib import all_errors
 
-sys.path.append(".")
+sys.path.append("")
 
-from deplacements import calcul_chemin, aller_vers, deplacement, perception, update_memoire, initialiser_memoire, charger_appartement, creer_carte_memoire
+from deplacements import calcul_chemin, aller_vers, deplacement, perception, update_memoire, initialiser_memoire, charger_appartement, creer_carte_memoire, valider_carte
 
 def test_bfs_chemin_simple():
-    appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement("tests/cartes_tests/test_bfs_chemin_connu.json")
+    appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement("tests/tests_deplacements/deplacement_cartes/test_bfs_chemin_connu.json")
     memoire = creer_carte_memoire(hauteur, largeur)
     memoire = initialiser_memoire(memoire, pos_robot, pos_residents, pos_dict, pos_armoire)
     perception_robot = perception(grille, pos_robot)
@@ -20,7 +20,7 @@ def test_bfs_chemin_simple():
     assert chemin[0] == depart
 
 def test_bfs_chemin_replanification():
-    appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement("tests/cartes_tests/test_replanification.json")
+    appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement("tests/tests_deplacements/deplacement_cartes/test_replanification.json")
     memoire = creer_carte_memoire(hauteur, largeur)
     memoire = initialiser_memoire(memoire, pos_robot, pos_residents, pos_dict, pos_armoire)
     perception_robot = perception(grille, pos_robot)
@@ -46,12 +46,12 @@ def test_bfs_chemin_replanification():
     assert [1, 3] not in nouveau_chemin
 
 def test_bfs_chemin_impossible():
-    appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement("tests/cartes_tests/test_bfs_inaccessible.json")
+    appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement("tests/tests_deplacements/deplacement_cartes/test_bfs_inaccessible.json")
     memoire = creer_carte_memoire(hauteur, largeur)
     memoire = initialiser_memoire(memoire, pos_robot, pos_residents, pos_dict, pos_armoire)
     perception_robot = perception(grille, pos_robot)
     memoire = update_memoire(perception_robot, memoire, pos_robot)
     depart = pos_robot
     arrivee = pos_residents[0]
-    parcours = aller_vers(memoire, depart, arrivee, "tests/cartes_tests/test_bfs_inaccessible.json")
+    parcours = aller_vers(memoire, depart, arrivee, "tests/tests_deplacements/deplacement_cartes/test_bfs_inaccessible.json")
     assert parcours is None

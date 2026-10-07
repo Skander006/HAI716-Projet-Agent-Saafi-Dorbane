@@ -2,12 +2,14 @@
 import json
 import sys
 from math import *
-
+from verification import valider_carte
 #Chargement de l'appartement pour récuperer sa taille exacte
 def charger_appartement(chemin):
+    if not valider_carte(chemin):
+        print("Erreur : Fichier de carte invalide", file=sys.stderr)
+        sys.exit(1)
     with open(chemin, "r", encoding="utf-8") as fichier:
         appartement = json.load(fichier)
-    
     hauteur = appartement["dimensions"]["hauteur"]
     largeur = appartement["dimensions"]["largeur"]
     pos_robot = appartement["depart_robot"]
@@ -153,9 +155,9 @@ if __name__ == "__main__":
     perception_robot = perception(grille, pos_robot)
     carte_init = initialiser_memoire(carte, pos_robot, pos_residents, pos_dict, pos_armoire)
     carte_updated = update_memoire(perception_robot, carte_init, pos_robot)
-    memoire, pos_actuelle = aller_vers(carte_updated, pos_robot, pos_armoire)
+    memoire, pos_actuelle = aller_vers(carte_updated, pos_robot, pos_armoire, sys.argv[1])
     print(memoire, pos_actuelle)
-    memoire, pos_actuelle = aller_vers(memoire, pos_armoire, pos_dict)
+    memoire, pos_actuelle = aller_vers(memoire, pos_armoire, pos_dict, sys.argv[1])
     print(memoire, pos_actuelle)
 
 
