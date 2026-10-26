@@ -5,6 +5,7 @@ from robot.emotions import trouver_emotion
 dictionnaire = rio.charger_dictionnaire("donnees/dictionnaire.json")
 
 
+# lire l'emotion d'un message
 def lire(message):
     return trouver_emotion(rio.normaliser(message), dictionnaire)
 
@@ -14,7 +15,7 @@ class TestEmotion(unittest.TestCase):
     def test_seule_donne_tristesse(self):
         self.assertEqual(lire("Je me sens tellement seule ce soir."), ("tristesse", "moyenne"))
 
-    # un message par emotion (enonce section 8, point 3)
+    # un message pour chaque emotion
     def test_joie(self):
         self.assertEqual(lire("Je suis contente aujourd'hui."), ("joie", "faible"))
 
@@ -40,12 +41,13 @@ class TestEmotion(unittest.TestCase):
         self.assertEqual(lire("Je suis curieuse de voir la suite."), ("anticipation", "faible"))
 
     def test_premier_mot_gagne(self):
-        # anxieuse (peur) arrive avant contente (joie) : c'est peur qui gagne
+        # anxieuse arrive en premier : c'est peur
         self.assertEqual(lire("Je suis anxieuse mais contente."), ("peur", "faible"))
-        # dans l'autre ordre, c'est joie qui gagne
+        # contente arrive en premier : c'est joie
         self.assertEqual(lire("Je suis contente mais anxieuse."), ("joie", "faible"))
 
     def test_rien_reconnu(self):
+        # aucun mot connu
         self.assertEqual(lire("blablabla azerty qwerty"), (None, None))
 
 

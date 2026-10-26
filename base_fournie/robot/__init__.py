@@ -1,1 +1,1 @@
-"""L'agent : ce que le robot sait et decide (memoire, decision)."""
+# le robot : ce qu'il sait et ce qu'il decide

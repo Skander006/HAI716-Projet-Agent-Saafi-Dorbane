@@ -1,35 +1,43 @@
 import reconfort_io as rio
 from monde.monde_armoire import MondeArmoire
 
+# les 8 emotions, dans l'ordre de la roue
 ORDRE_EMOTIONS = ["joie", "confiance", "peur", "surprise", "tristesse", "degout", "colere", "anticipation"]
+# les 3 intensites, de la plus petite a la plus grande
 ORDRE_INTENSITES = ["faible", "moyenne", "forte"]
+# l'armoire a 3 lignes et 8 colonnes
 NB_LIGNES = 3
 NB_COLONNES = 8
 
 
+# ce dont le robot se souvient sur l'armoire
 class MemoireArmoire:
-    """Memoire de l'agent sur l'armoire : ou est le selecteur, et ce qu'il a
-    deja vu dans chaque casier. Elle persiste d'une demande a l'autre
-    (enonce section 4)."""
 
     def __init__(self, casier_depart):
+        # ou est le selecteur
         self.selecteur = tuple(casier_depart)
-        self.vus = {}  # (ligne, colonne) -> objet vu, ou None si vu vide
+        # les casiers deja regardes et ce qu'il y avait dedans (None = vide)
+        self.vus = {}
 
+    # on retient ce qu'on a vu dans un casier
     def noter(self, casier, contenu):
         self.vus[tuple(casier)] = contenu
 
+    # est-ce qu'on a deja regarde ce casier ?
     def deja_vu(self, casier):
         return tuple(casier) in self.vus
 
 
+# combien de pas entre deux emotions sur la roue (0 a 4)
 def distance_emotion(emotion1, emotion2):
     i1 = ORDRE_EMOTIONS.index(emotion1)
     i2 = ORDRE_EMOTIONS.index(emotion2)
     ecart = abs(i1 - i2)
+    # la roue tourne, donc on prend le chemin le plus court
     return min(ecart, 8 - ecart)
 
 
+# la liste des casiers qu'on a le droit de prendre (15 casiers)
 def casiers_candidats(emotion, intensite):
     candidats = []
     rang_intensite = ORDRE_INTENSITES.index(intensite)
@@ -37,13 +45,15 @@ def casiers_candidats(emotion, intensite):
 
     for e in ORDRE_EMOTIONS:
         dist_emotion = distance_emotion(emotion, e)
+        # trop loin sur la roue : on ne prend pas
         if dist_emotion > 2:
             continue
 
         i_arrivee = ORDRE_EMOTIONS.index(e)
-        # 0 = sens horaire (on avance), 1 = sens antihoraire (on recule)
+        # 0 = on tourne dans le sens des aiguilles, 1 = dans l'autre sens
         sens = 0 if (i_arrivee - i_depart) % 8 <= 4 else 1
 
+        # on ajoute les 3 intensites de cette emotion
         for i, autre_intensite in enumerate(ORDRE_INTENSITES):
             ecart_intensite = abs(rang_intensite - i)
             candidats.append({
@@ -56,6 +66,8 @@ def casiers_candidats(emotion, intensite):
             })
 
     return candidats
+# l'ordre pour trier : d'abord la distance, puis l'ecart d'intensite,
+# puis la plus faible intensite, puis le sens des aiguilles
 def cle_de_tri(candidat):
     return (
         candidat["distance_emotion"],
@@ -65,19 +77,23 @@ def cle_de_tri(candidat):
     )
 
 
+# on range les candidats du meilleur au moins bon
 def trier_candidats(candidats):
     return sorted(candidats, key=cle_de_tri)
+# ou est le casier dans l'armoire : (ligne, colonne)
 def position_casier(emotion, intensite):
     ligne = ORDRE_INTENSITES.index(intensite)
     colonne = ORDRE_EMOTIONS.index(emotion)
     return (ligne, colonne)
 
 
+# la liste des mouvements pour aller d'un casier a un autre
 def chemin_vers(depart, arrivee):
     l1, c1 = depart
     l2, c2 = arrivee
     mouvements = []
 
+    # d'abord on monte ou on descend
     while l1 != l2:
         if l2 > l1:
             mouvements.append("S")
@@ -86,6 +102,7 @@ def chemin_vers(depart, arrivee):
             mouvements.append("N")
             l1 -= 1
 
+    # ensuite on va a droite ou a gauche, par le cote le plus court
     a = (c2 - c1) % 8
     if a <= 8 - a:
         for _ in range(a):
@@ -96,18 +113,20 @@ def chemin_vers(depart, arrivee):
 
     return mouvements
 
+# bouger le selecteur d'une case
 def deplacer_selecteur(casier, direction):
-    """Action CHERCHER : un casier dans la direction donnee. Les colonnes
-    bouclent (7 <-> 0), les lignes non (annexe C.2)."""
     ligne, colonne = casier
     if direction == "N":
+        # on ne peut pas monter plus haut que la ligne 0
         if ligne == 0:
             raise ValueError("CHERCHER N impossible depuis la ligne 0")
         return (ligne - 1, colonne)
     if direction == "S":
+        # on ne peut pas descendre plus bas que la derniere ligne
         if ligne == NB_LIGNES - 1:
             raise ValueError("CHERCHER S impossible depuis la derniere ligne")
         return (ligne + 1, colonne)
+    # a droite et a gauche, on fait le tour (apres 7 on revient a 0)
     if direction == "E":
         return (ligne, (colonne + 1) % NB_COLONNES)
     if direction == "O":
@@ -115,41 +134,39 @@ def deplacer_selecteur(casier, direction):
     raise ValueError("direction inconnue : " + str(direction))
 
 
+# choisir le casier ou aller : le premier de la liste qu'on n'a pas encore vu,
+# ou qu'on a vu avec un objet dedans. Les casiers vus vides, on les saute.
 def choisir_cible(candidats_tries, memoire):
-    """Decision : le premier candidat (dans l'ordre de priorite) qui est soit
-    pas encore vu, soit vu et garni. Les candidats deja vus vides sont sautes.
-    Retourne (candidat, casier, garni) ou (None, None, False) si les 15
-    candidats sont tous vus vides."""
     for candidat in candidats_tries:
         casier = position_casier(candidat["emotion"], candidat["intensite"])
+        # pas encore regarde : on y va
         if not memoire.deja_vu(casier):
             return candidat, casier, False
+        # deja regarde et il y a un objet : c'est lui
         if memoire.vus[casier] is not None:
             return candidat, casier, True
+    # tous les casiers sont vides
     return None, None, False
 
 
+# chercher un objet dans l'armoire, une case a la fois
+# renvoie l'objet, le casier choisi, et la liste des pas faits
 def fouiller_armoire(emotion, intensite, memoire, monde):
-    """Fouille l'armoire pour (emotion, intensite), un casier a la fois.
-    A chaque tour : l'agent decide d'un mouvement d'apres sa memoire, le
-    monde lui montre le casier ou il arrive, et il le note dans sa memoire.
-
-    Retourne (objet, candidat_choisi, pas) ; (None, None, pas) si l'armoire
-    est vide pour cette demande. Chaque pas est un dictionnaire avec action,
-    argument, casier (AVANT l'action) et contenu_casier, pour la trace."""
     candidats_tries = trier_candidats(casiers_candidats(emotion, intensite))
     pas = []
 
-    # perception : le robot voit le casier devant lequel est deja le selecteur
+    # le robot regarde le casier devant lequel il est deja
     memoire.noter(memoire.selecteur, monde.regarder(memoire.selecteur))
 
     while True:
         candidat, cible, garni = choisir_cible(candidats_tries, memoire)
+        # rien a prendre : on abandonne
         if candidat is None:
             return None, None, pas
 
         contenu_actuel = memoire.vus[memoire.selecteur]
 
+        # on est devant le bon casier et il y a un objet : on le prend
         if garni and memoire.selecteur == cible:
             pas.append({"action": "PRENDRE", "argument": contenu_actuel,
                         "casier": list(memoire.selecteur),
@@ -158,25 +175,32 @@ def fouiller_armoire(emotion, intensite, memoire, monde):
             candidat["colonne"] = cible[1]
             return contenu_actuel, candidat, pas
 
-        # un seul mouvement vers la cible, puis on regarde le nouveau casier
+        # sinon on fait un seul pas vers le casier
         direction = chemin_vers(memoire.selecteur, cible)[0]
         pas.append({"action": "CHERCHER", "argument": direction,
                     "casier": list(memoire.selecteur),
                     "contenu_casier": contenu_actuel})
         memoire.selecteur = deplacer_selecteur(memoire.selecteur, direction)
+        # et on regarde ce qu'il y a dans le nouveau casier
         memoire.noter(memoire.selecteur, monde.regarder(memoire.selecteur))
 
 
+# dire si on a pris le bon casier ou un autre (pour la trace)
 def determiner_repli(candidat):
+    # le casier exact
     if candidat["distance_emotion"] == 0 and candidat["ecart_intensite"] == 0:
         return "aucun"
+    # la meme emotion mais une autre intensite
     if candidat["distance_emotion"] == 0:
         return "intensite"
+    # l'emotion juste a cote sur la roue
     if candidat["distance_emotion"] == 1:
         return "voisine_1"
+    # l'emotion a deux cases sur la roue
     return "voisine_2"
 
 
+# petit essai a la main
 if __name__ == "__main__":
     donnees = rio.charger_armoire("donnees/armoire_standard.json")
     monde = MondeArmoire(donnees)

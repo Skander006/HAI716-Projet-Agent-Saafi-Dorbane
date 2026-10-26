@@ -1,1 +1,1 @@
-"""La realite (simulateur) : seuls fichiers qui lisent le champ objet."""
+# le monde reel : ce que le robot ne connait pas d'avance

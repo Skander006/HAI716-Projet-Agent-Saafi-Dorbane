@@ -1,1 +1,1 @@
-"""Validation des fichiers d'entree (enonce section 5.6)."""
+# verifier que les fichiers donnes au programme sont corrects
