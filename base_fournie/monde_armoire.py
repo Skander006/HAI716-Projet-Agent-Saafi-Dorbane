@@ -7,6 +7,18 @@ demandant au monde ce qu'il y a devant son selecteur.
 """
 
 
+def verifier_objets(donnees_armoire):
+    """Validation du champ objet de chaque casier (present, texte ou null).
+    Elle est ici et pas dans la verification, car c'est le seul fichier qui
+    a le droit de lire ce champ. Retourne un message d'erreur, ou None."""
+    for casier in donnees_armoire["casiers"]:
+        if "objet" not in casier:
+            return "un casier n'a pas de champ objet"
+        if casier["objet"] is not None and type(casier["objet"]) != str:
+            return "le champ objet d'un casier doit etre un texte ou null"
+    return None
+
+
 class MondeArmoire:
 
     def __init__(self, donnees_armoire):
