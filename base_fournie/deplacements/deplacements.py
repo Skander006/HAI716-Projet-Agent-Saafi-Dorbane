@@ -2,7 +2,7 @@
 import json
 import sys
 from math import *
-from verification import valider_carte
+from .verification import valider_carte
 #Chargement de l'appartement pour récuperer sa taille exacte
 def charger_appartement(chemin):
     if not valider_carte(chemin):
