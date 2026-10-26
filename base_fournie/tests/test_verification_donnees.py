@@ -6,7 +6,7 @@ import unittest
 from contextlib import redirect_stderr
 
 import reconfort_io as rio
-import verification_donnees as v
+from validation import armoire_dictionnaire as v
 
 ARMOIRE = rio.charger_armoire("donnees/armoire_standard.json")
 DICO = rio.charger_dictionnaire("donnees/dictionnaire.json")

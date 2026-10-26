@@ -1,5 +1,5 @@
 import reconfort_io as rio
-from monde_armoire import MondeArmoire
+from monde.monde_armoire import MondeArmoire
 
 ORDRE_EMOTIONS = ["joie", "confiance", "peur", "surprise", "tristesse", "degout", "colere", "anticipation"]
 ORDRE_INTENSITES = ["faible", "moyenne", "forte"]

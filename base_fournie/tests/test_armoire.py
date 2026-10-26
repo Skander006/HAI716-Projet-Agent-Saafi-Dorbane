@@ -1,7 +1,7 @@
 import unittest
 import reconfort_io as rio
-import armoire
-from monde_armoire import MondeArmoire
+from robot import armoire
+from monde.monde_armoire import MondeArmoire
 
 armoire_data = rio.charger_armoire("donnees/armoire_standard.json")
 

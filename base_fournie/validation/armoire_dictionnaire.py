@@ -7,7 +7,7 @@ incorrect, True sinon.
 import sys
 
 import reconfort_io as rio
-from monde_armoire import verifier_objets
+from monde.monde_armoire import verifier_objets
 
 EMOTIONS = ["joie", "confiance", "peur", "surprise", "tristesse", "degout", "colere", "anticipation"]
 INTENSITES = ["faible", "moyenne", "forte"]

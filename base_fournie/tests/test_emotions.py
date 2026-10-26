@@ -1,6 +1,6 @@
 import unittest
 import reconfort_io as rio
-from emotions import trouver_emotion
+from robot.emotions import trouver_emotion
 
 dictionnaire = rio.charger_dictionnaire("donnees/dictionnaire.json")
 
