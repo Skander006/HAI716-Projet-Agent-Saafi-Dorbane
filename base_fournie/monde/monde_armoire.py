@@ -12,9 +12,7 @@ def verifier_objets(donnees_armoire):
     # tout est bon
     return None
 
-
 class MondeArmoire:
-
     def __init__(self, donnees_armoire):
         # pour chaque casier (ligne, colonne), l'objet dedans (None = vide)
         self.objets = {}

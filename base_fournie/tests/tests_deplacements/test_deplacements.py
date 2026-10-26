@@ -35,14 +35,14 @@ def test_bfs_chemin_simple():
 
 # TEST 2 : BFS - REPLANIFICATION APRÈS DÉCOUVERTE D'UN MUR
 def test_bfs_chemin_replanification():
-    ( memoire,pos_robot,pos_residents,pos_dict,pos_armoire,grille,chemin_fichier,) = initialiser_test("test_replanification.json")
+    memoire,pos_robot,pos_residents,pos_dict,pos_armoire,grille,chemin_fichier= initialiser_test("test_replanification.json")
     depart = pos_robot
     cible = pos_residents[0]
     # Destination adjacente au résident
-    arrivee = meilleure_destination(memoire,depart,cible,)
+    arrivee = meilleure_destination(memoire,depart,cible)
     assert arrivee is not None
     # Premier chemin : le mur en [1, 3] est encore inconnu
-    chemin = calcul_chemin(memoire,depart,arrivee,)
+    chemin = calcul_chemin(memoire,depart,arrivee)
     assert chemin is not None
     assert chemin[0] == depart
     assert chemin[-1] == arrivee

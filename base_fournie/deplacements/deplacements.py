@@ -156,9 +156,19 @@ def afficher_memoire(memoire):
     for ligne in memoire:
         print(" ".join(ligne))
     print()
-
+def direction_entre(case_depart, case_arrivee):
+    dl = case_arrivee[0] - case_depart[0]
+    dc = case_arrivee[1] - case_depart[1]
+    if dl == -1:
+        return "N"
+    if dl == 1:
+        return "S"
+    if dc == 1:
+        return "E"
+    return "O"
 #Fonction finale pour le deplacement
 def aller_vers(memoire, position_actuelle, point, chemin):
+    pas_faits = []
     #Initialisation
     appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement(chemin)
     while True:
@@ -171,7 +181,7 @@ def aller_vers(memoire, position_actuelle, point, chemin):
         # Le robot est déjà adjacent à la cible
         if distance == 1:
             print("Robot arrivé à côté de la cible :", point)
-            return memoire, position_actuelle
+            return memoire, position_actuelle, pas_faits
         #Trouver meilleure position adjacente de la destination (car on ne peut pas la traverser)
         meilleure_position = meilleure_destination(memoire, position_actuelle, point)
         if meilleure_position is None:
@@ -186,6 +196,7 @@ def aller_vers(memoire, position_actuelle, point, chemin):
         #Deplacement
         prochain_point = chemin[1]
         position_actuelle = deplacement(memoire, position_actuelle, prochain_point)
+        pas_faits.append({"position": position_actuelle, "direction": direction_entre(position_actuelle, prochain_point)})
         print("Position actuelle : ",position_actuelle)
         afficher_memoire(memoire)
 
@@ -212,7 +223,5 @@ if __name__ == "__main__":
     perception_robot = perception(grille, pos_robot)
     carte_init = initialiser_memoire(carte, pos_robot, pos_residents, pos_dict, pos_armoire)
     carte_updated = update_memoire(perception_robot, carte_init, pos_robot)
-    memoire, pos_actuelle = aller_vers(carte_updated, pos_robot, pos_armoire, sys.argv[1])
-    afficher_memoire(memoire)
-    memoire, position_actuelle = aller_vers(carte_updated, pos_actuelle, pos_dict, sys.argv[1])
+    memoire, pos_actuelle = aller_vers(carte_updated, pos_robot, pos_dict, sys.argv[1])
     afficher_memoire(memoire)
