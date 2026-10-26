@@ -1,8 +1,14 @@
 import unittest
 import reconfort_io as rio
 import armoire
+from monde_armoire import MondeArmoire
 
 armoire_data = rio.charger_armoire("donnees/armoire_standard.json")
+
+
+def nouvelle_fouille(emotion, intensite, donnees=armoire_data):
+    memoire = armoire.MemoireArmoire(donnees["casier_depart"])
+    return armoire.fouiller_armoire(emotion, intensite, memoire, MondeArmoire(donnees))
 
 
 class TestArmoire(unittest.TestCase):
@@ -36,17 +42,17 @@ class TestArmoire(unittest.TestCase):
         self.assertEqual(tries[0]["intensite"], "moyenne")
 
     def test_fouille_trouve_objet_exact(self):
-        objet, casier, actions = armoire.fouiller_armoire("tristesse", "moyenne", armoire_data)
+        objet, casier, pas = nouvelle_fouille("tristesse", "moyenne")
         self.assertEqual(objet, "couverture")
 
     def test_fouille_repli(self):
-        objet, casier, actions = armoire.fouiller_armoire("surprise", "forte", armoire_data)
+        objet, casier, pas = nouvelle_fouille("surprise", "forte")
         self.assertEqual(objet, "telephone")
         self.assertEqual(armoire.determiner_repli(casier), "voisine_1")
 
     def test_armoire_vide(self):
         vide = {"casier_depart": [1, 0], "casiers": []}
-        objet, casier, actions = armoire.fouiller_armoire("tristesse", "moyenne", vide)
+        objet, casier, pas = nouvelle_fouille("tristesse", "moyenne", vide)
         self.assertIsNone(objet)
 
 

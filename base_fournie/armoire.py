@@ -1,7 +1,26 @@
 import reconfort_io as rio
+from monde_armoire import MondeArmoire
 
 ORDRE_EMOTIONS = ["joie", "confiance", "peur", "surprise", "tristesse", "degout", "colere", "anticipation"]
 ORDRE_INTENSITES = ["faible", "moyenne", "forte"]
+NB_LIGNES = 3
+NB_COLONNES = 8
+
+
+class MemoireArmoire:
+    """Memoire de l'agent sur l'armoire : ou est le selecteur, et ce qu'il a
+    deja vu dans chaque casier. Elle persiste d'une demande a l'autre
+    (enonce section 4)."""
+
+    def __init__(self, casier_depart):
+        self.selecteur = tuple(casier_depart)
+        self.vus = {}  # (ligne, colonne) -> objet vu, ou None si vu vide
+
+    def noter(self, casier, contenu):
+        self.vus[tuple(casier)] = contenu
+
+    def deja_vu(self, casier):
+        return tuple(casier) in self.vus
 
 
 def distance_emotion(emotion1, emotion2):
@@ -77,39 +96,75 @@ def chemin_vers(depart, arrivee):
 
     return mouvements
 
-def fouiller_armoire(emotion, intensite, armoire):
-    """Simule le sélecteur qui visite les casiers candidats, dans l'ordre de
-    priorité, jusqu'à trouver un objet. Retourne (objet, casier_choisi, actions).
-    Si rien n'est trouvé : (None, None, actions)."""
-    candidats = casiers_candidats(emotion, intensite)
-    candidats_tries = trier_candidats(candidats)
+def deplacer_selecteur(casier, direction):
+    """Action CHERCHER : un casier dans la direction donnee. Les colonnes
+    bouclent (7 <-> 0), les lignes non (annexe C.2)."""
+    ligne, colonne = casier
+    if direction == "N":
+        if ligne == 0:
+            raise ValueError("CHERCHER N impossible depuis la ligne 0")
+        return (ligne - 1, colonne)
+    if direction == "S":
+        if ligne == NB_LIGNES - 1:
+            raise ValueError("CHERCHER S impossible depuis la derniere ligne")
+        return (ligne + 1, colonne)
+    if direction == "E":
+        return (ligne, (colonne + 1) % NB_COLONNES)
+    if direction == "O":
+        return (ligne, (colonne - 1) % NB_COLONNES)
+    raise ValueError("direction inconnue : " + str(direction))
 
-    position_actuelle = tuple(armoire["casier_depart"])
-    actions = []
 
+def choisir_cible(candidats_tries, memoire):
+    """Decision : le premier candidat (dans l'ordre de priorite) qui est soit
+    pas encore vu, soit vu et garni. Les candidats deja vus vides sont sautes.
+    Retourne (candidat, casier, garni) ou (None, None, False) si les 15
+    candidats sont tous vus vides."""
     for candidat in candidats_tries:
-        cible = position_casier(candidat["emotion"], candidat["intensite"])
-        mouvements = chemin_vers(position_actuelle, cible)
+        casier = position_casier(candidat["emotion"], candidat["intensite"])
+        if not memoire.deja_vu(casier):
+            return candidat, casier, False
+        if memoire.vus[casier] is not None:
+            return candidat, casier, True
+    return None, None, False
 
-        for direction in mouvements:
-            actions.append(("CHERCHER", direction, None))
-        position_actuelle = cible
 
-        contenu = None
-        for casier in armoire["casiers"]:
-            if casier["emotion"] == candidat["emotion"] and casier["intensite"] == candidat["intensite"]:
-                contenu = casier["objet"]
-                break
+def fouiller_armoire(emotion, intensite, memoire, monde):
+    """Fouille l'armoire pour (emotion, intensite), un casier a la fois.
+    A chaque tour : l'agent decide d'un mouvement d'apres sa memoire, le
+    monde lui montre le casier ou il arrive, et il le note dans sa memoire.
 
-        if actions:
-            actions[-1] = (actions[-1][0], actions[-1][1], contenu)
+    Retourne (objet, candidat_choisi, pas) ; (None, None, pas) si l'armoire
+    est vide pour cette demande. Chaque pas est un dictionnaire avec action,
+    argument, casier (AVANT l'action) et contenu_casier, pour la trace."""
+    candidats_tries = trier_candidats(casiers_candidats(emotion, intensite))
+    pas = []
 
-        if contenu is not None:
+    # perception : le robot voit le casier devant lequel est deja le selecteur
+    memoire.noter(memoire.selecteur, monde.regarder(memoire.selecteur))
+
+    while True:
+        candidat, cible, garni = choisir_cible(candidats_tries, memoire)
+        if candidat is None:
+            return None, None, pas
+
+        contenu_actuel = memoire.vus[memoire.selecteur]
+
+        if garni and memoire.selecteur == cible:
+            pas.append({"action": "PRENDRE", "argument": contenu_actuel,
+                        "casier": list(memoire.selecteur),
+                        "contenu_casier": contenu_actuel})
             candidat["ligne"] = cible[0]
             candidat["colonne"] = cible[1]
-            return contenu, candidat, actions
+            return contenu_actuel, candidat, pas
 
-    return None, None, actions
+        # un seul mouvement vers la cible, puis on regarde le nouveau casier
+        direction = chemin_vers(memoire.selecteur, cible)[0]
+        pas.append({"action": "CHERCHER", "argument": direction,
+                    "casier": list(memoire.selecteur),
+                    "contenu_casier": contenu_actuel})
+        memoire.selecteur = deplacer_selecteur(memoire.selecteur, direction)
+        memoire.noter(memoire.selecteur, monde.regarder(memoire.selecteur))
 
 
 def determiner_repli(candidat):
@@ -123,17 +178,19 @@ def determiner_repli(candidat):
 
 
 if __name__ == "__main__":
-    armoire = rio.charger_armoire("donnees/armoire_standard.json")
+    donnees = rio.charger_armoire("donnees/armoire_standard.json")
+    monde = MondeArmoire(donnees)
+    memoire = MemoireArmoire(donnees["casier_depart"])
 
     print("=== Cas 1 : tiroir exact garni (tristesse/moyenne) ===")
-    objet, casier, actions = fouiller_armoire("tristesse", "moyenne", armoire)
-    print("objet:", objet, "| repli:", determiner_repli(casier), "| actions:", len(actions))
+    objet, casier, pas = fouiller_armoire("tristesse", "moyenne", memoire, monde)
+    print("objet:", objet, "| repli:", determiner_repli(casier), "| pas:", len(pas))
 
-    print("\n=== Cas 2 : repli necessaire (surprise/forte, colonne vide) ===")
-    objet, casier, actions = fouiller_armoire("surprise", "forte", armoire)
-    print("objet:", objet, "| repli:", determiner_repli(casier), "| actions:", len(actions))
+    print("\n=== Cas 2 : repli (surprise/forte, colonne vide), le selecteur repart de", memoire.selecteur, "===")
+    objet, casier, pas = fouiller_armoire("surprise", "forte", memoire, monde)
+    print("objet:", objet, "| repli:", determiner_repli(casier), "| pas:", len(pas))
 
     print("\n=== Cas 3 : echec, armoire totalement vide ===")
-    armoire_vide = {"casier_depart": [1, 0], "casiers": []}
-    objet, casier, actions = fouiller_armoire("tristesse", "moyenne", armoire_vide)
-    print("objet:", objet, "| casier:", casier, "| actions:", len(actions))
+    vide = {"casier_depart": [1, 0], "casiers": []}
+    objet, casier, pas = fouiller_armoire("tristesse", "moyenne", MemoireArmoire([1, 0]), MondeArmoire(vide))
+    print("objet:", objet, "| casier:", casier, "| pas:", len(pas))
