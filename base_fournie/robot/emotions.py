@@ -1,14 +1,17 @@
 import reconfort_io as rio
 
 
+# trouver l'emotion du message : le premier mot connu du dictionnaire gagne
 def trouver_emotion(mots, dictionnaire):
     for mot in mots:
         for entree in dictionnaire["entrees"]:
             if mot in entree["formes"]:
                 return entree["emotion"], entree["intensite"]
+    # aucun mot connu
     return None, None
 
 
+# petit essai a la main
 if __name__ == "__main__":
     dictionnaire = rio.charger_dictionnaire("donnees/dictionnaire.json")
 
