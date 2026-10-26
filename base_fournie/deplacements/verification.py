@@ -128,7 +128,6 @@ def verifier_coherence_dimensions(carte):
     if carte["dimensions"]["hauteur"] <= 0 or carte["dimensions"]["largeur"] <= 0:
         print("Erreur : les dimensions ne sont pas cohérents", file = sys.stderr)
         return False
-
     #Coherence entre dimensions et grille
     if len(carte["grille"]) != carte["dimensions"]["hauteur"]:
         print("Erreur : La hauteur grille ne correspond pas à la hauteur en dimensions", file=sys.stderr)
