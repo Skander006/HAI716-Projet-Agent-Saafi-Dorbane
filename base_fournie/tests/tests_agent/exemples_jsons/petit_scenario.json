@@ -1,0 +1,29 @@
+{
+  "format": "robot-reconfort/scenario",
+  "version": 1,
+  "nom": "petit",
+  "carte": "petite",
+  "armoire": "armoire_standard",
+  "demandes": [
+    {
+      "numero": 1,
+      "resident": "R1",
+      "message": "Je me sens seule."
+    },
+    {
+      "numero": 2,
+      "resident": "R1",
+      "message": "Je suis contente."
+    },
+    {
+      "numero": 3,
+      "resident": "R2",
+      "message": "Je me sens seule."
+    },
+    {
+      "numero": 4,
+      "resident": "R2",
+      "message": "Je suis contente."
+    }
+  ]
+}
