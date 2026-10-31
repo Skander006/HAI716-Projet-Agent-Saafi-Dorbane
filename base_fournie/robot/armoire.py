@@ -1,6 +1,3 @@
-import reconfort_io as rio
-from monde.monde_armoire import MondeArmoire
-
 # les 8 emotions, dans l'ordre de la roue
 ORDRE_EMOTIONS = ["joie", "confiance", "peur", "surprise", "tristesse", "degout", "colere", "anticipation"]
 # les 3 intensites, de la plus petite a la plus grande
@@ -9,24 +6,15 @@ ORDRE_INTENSITES = ["faible", "moyenne", "forte"]
 NB_LIGNES = 3
 NB_COLONNES = 8
 
-
 # ce dont le robot se souvient sur l'armoire
 class MemoireArmoire:
-
     def __init__(self, casier_depart):
-        # ou est le selecteur
         self.selecteur = tuple(casier_depart)
-        # les casiers deja regardes et ce qu'il y avait dedans (None = vide)
         self.vus = {}
-
-    # on retient ce qu'on a vu dans un casier
     def noter(self, casier, contenu):
         self.vus[tuple(casier)] = contenu
-
-    # est-ce qu'on a deja regarde ce casier ?
     def deja_vu(self, casier):
         return tuple(casier) in self.vus
-
 
 # combien de pas entre deux emotions sur la roue (0 a 4)
 def distance_emotion(emotion1, emotion2):
@@ -45,14 +33,10 @@ def casiers_candidats(emotion, intensite):
 
     for e in ORDRE_EMOTIONS:
         dist_emotion = distance_emotion(emotion, e)
-        # trop loin sur la roue : on ne prend pas
         if dist_emotion > 2:
             continue
-
         i_arrivee = ORDRE_EMOTIONS.index(e)
-        # 0 = on tourne dans le sens des aiguilles, 1 = dans l'autre sens
         sens = 0 if (i_arrivee - i_depart) % 8 <= 4 else 1
-
         # on ajoute les 3 intensites de cette emotion
         for i, autre_intensite in enumerate(ORDRE_INTENSITES):
             ecart_intensite = abs(rang_intensite - i)
@@ -154,19 +138,13 @@ def choisir_cible(candidats_tries, memoire):
 def fouiller_armoire(emotion, intensite, memoire, monde):
     candidats_tries = trier_candidats(casiers_candidats(emotion, intensite))
     pas = []
-
-    # le robot regarde le casier devant lequel il est deja
     memoire.noter(memoire.selecteur, monde.regarder(memoire.selecteur))
-
     while True:
         candidat, cible, garni = choisir_cible(candidats_tries, memoire)
         # rien a prendre : on abandonne
         if candidat is None:
             return None, None, pas
-
         contenu_actuel = memoire.vus[memoire.selecteur]
-
-        # on est devant le bon casier et il y a un objet : on le prend
         if garni and memoire.selecteur == cible:
             pas.append({"action": "PRENDRE", "argument": contenu_actuel,
                         "casier": list(memoire.selecteur),
@@ -174,16 +152,12 @@ def fouiller_armoire(emotion, intensite, memoire, monde):
             candidat["ligne"] = cible[0]
             candidat["colonne"] = cible[1]
             return contenu_actuel, candidat, pas
-
-        # sinon on fait un seul pas vers le casier
         direction = chemin_vers(memoire.selecteur, cible)[0]
         pas.append({"action": "CHERCHER", "argument": direction,
                     "casier": list(memoire.selecteur),
                     "contenu_casier": contenu_actuel})
         memoire.selecteur = deplacer_selecteur(memoire.selecteur, direction)
-        # et on regarde ce qu'il y a dans le nouveau casier
         memoire.noter(memoire.selecteur, monde.regarder(memoire.selecteur))
-
 
 # dire si on a pris le bon casier ou un autre (pour la trace)
 def determiner_repli(candidat):
@@ -198,23 +172,3 @@ def determiner_repli(candidat):
         return "voisine_1"
     # l'emotion a deux cases sur la roue
     return "voisine_2"
-
-
-# petit essai a la main
-if __name__ == "__main__":
-    donnees = rio.charger_armoire("donnees/armoire_standard.json")
-    monde = MondeArmoire(donnees)
-    memoire = MemoireArmoire(donnees["casier_depart"])
-
-    print("=== Cas 1 : tiroir exact garni (tristesse/moyenne) ===")
-    objet, casier, pas = fouiller_armoire("tristesse", "moyenne", memoire, monde)
-    print("objet:", objet, "| repli:", determiner_repli(casier), "| pas:", len(pas))
-
-    print("\n=== Cas 2 : repli (surprise/forte, colonne vide), le selecteur repart de", memoire.selecteur, "===")
-    objet, casier, pas = fouiller_armoire("surprise", "forte", memoire, monde)
-    print("objet:", objet, "| repli:", determiner_repli(casier), "| pas:", len(pas))
-
-    print("\n=== Cas 3 : echec, armoire totalement vide ===")
-    vide = {"casier_depart": [1, 0], "casiers": []}
-    objet, casier, pas = fouiller_armoire("tristesse", "moyenne", MemoireArmoire([1, 0]), MondeArmoire(vide))
-    print("objet:", objet, "| casier:", casier, "| pas:", len(pas))

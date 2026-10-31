@@ -9,7 +9,6 @@ def verifier_objets(donnees_armoire):
             return "un casier n'a pas de champ objet"
         if casier["objet"] is not None and type(casier["objet"]) != str:
             return "le champ objet d'un casier doit etre un texte ou null"
-    # tout est bon
     return None
 
 class MondeArmoire:
