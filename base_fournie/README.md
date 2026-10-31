@@ -1,67 +1,82 @@
-# Base fournie : projet « Robot de réconfort »
+# Robot de réconfort — SAAFI & DORBANE
 
-Ce dossier contient le strict minimum pour démarrer : de quoi **lire les
-entrées** et **écrire la sortie**. Tout le reste (perception, carte mentale,
-planification, consultation du dictionnaire, fouille de l'armoire, boucle de
-décision) est le sujet du projet.
+Projet de semestre, master informatique. Un robot à perception locale
+consulte un dictionnaire, fouille une armoire et rapporte un objet à un
+résident.
 
-## Contenu
+Langage : *Python* — Version : *Python 3.12*
 
-```
-reconfort_io.py                 lecture des 4 fichiers, écriture de la trace
-demo.py                         exemple d'utilisation ; ne résout rien
-rendu.json                      modèle à compléter (noms, commande, vidéo)
-MODELE_README.md                squelette du README de votre dépôt
-donnees/dictionnaire.json       250 formes -> (émotion, intensité)
-donnees/armoire_standard.json   24 casiers : 8 émotions x 3 intensités
-cartes/appartement_01..05.json  cinq appartements
-cartes/scenario_01..05.json     le scénario associé à chacun
-```
-
-## Démarrer
+## Lancer
 
 ```
-cd base_fournie
-python demo.py cartes/appartement_01.json cartes/scenario_01.json donnees sortie.json
+python main.py <carte.json> <scenario.json> <dossier_donnees> <trace_sortie.json>
 ```
 
-La démo charge les quatre fichiers, affiche un résumé, découpe chaque
-message en mots, et écrit une trace où toutes les demandes échouent. C'est
-le squelette : à vous de le remplir.
+Exemple :
 
-Les quatre arguments sont exactement ceux du contrat d'appel de l'énoncé
-(section 2) : carte, scénario, dossier de données, trace à écrire. Votre
-programme devra les accepter dans le même ordre, et vous déclarerez la
-commande qui le lance dans `rendu.json`.
+```
+python main.py cartes/appartement_01.json cartes/scenario_01.json donnees sortie.json
+```
+ou aussi si on veut voir l'affichage :
 
-## Ce que `reconfort_io.py` fait, et ne fait pas
+```
+python main.py cartes/appartement_01.json cartes/scenario_01.json donnees sortie.json --afficher
+```
+Dépendances : aucune bibliothèque externe nécessaire pour exécuter le programme. Python 3.12 est recommandé.
 
-**Fait** : ouvrir les fichiers, signaler proprement un fichier absent, mal
-encodé ou syntaxiquement invalide, vérifier les champs `format` et
-`version`, accumuler les pas et les livraisons, écrire la trace au bon
-format.
+## Tester
 
-**Ne fait pas** : toutes les autres validations de la section 5.6 de
-l'énoncé (grille rectangulaire, positions dans les bornes, résident sur un
-mur, casier hors de l'armoire, résident inconnu…). Elles sont notées, et
-elles sont à vous.
+Installer `pytest` si necessaire
+```
+python -m pip install pytest
+```
+Lancer les tests depuis `base_fournie` :
 
-Ne contient évidemment ni `plus_court_chemin`, ni `lire_emotion`, ni
-`choisir_casier`. Ne les cherchez pas.
+```
+python -m pytest -v
+```
 
-## Cinq cartes, ce n'est pas assez
+*Les tests couvrent la validation des fichiers JSON, la perception locale, la carte mémoire, le calcul des chemins BFS, la replanification, les déplacements, l'identification des émotions, la recherche dans l'armoire et plusieurs comportements du robot.*
 
-La correction utilise en plus des jeux que vous n'avez pas. Fabriquez-vous
-d'autres cartes : c'est un exercice utile en soi, et c'est le seul moyen de
-savoir si votre robot marche vraiment.
+## Organisation du code
 
-## Deux rappels
+| Fichier | Rôle |
+|---|---|
+| `main.py` | Point d'entrée, initialisation et exécution des scénarios |
+| `robot/agent.py` | Boucle de décision et coordination des actions |
+| `robot/perception.py` | Perception locale de l'environnement |
+| `robot/memoire.py` | Gestion de la carte mémoire et de l'état du robot |
+| `robot/decision.py` | Planification et choix des actions |
+| `robot/action.py` | Exécution des actions du robot |
+| `robot/emotions.py` | Reconnaissance des émotions et des intensités |
+| `robot/armoire.py` | Recherche et sélection des objets de réconfort |
+| `robot/affichage.py` | Gère l'affichage de la grille, les actions du robot et tout ce qui est visuel à chaque tour|
+| `deplacements/deplacements.py` | Calcul des chemins BFS et déplacements |
+| `monde/monde_armoire.py` | Simulation de l'armoire et de ses casiers |
+| `monde/monde_appartement.py` | Simulation de l'appartement |
+| `validation/armoire_dictionnaire.py` | Validation du dictionnaire et des armoires |
+| `validation/carte.py` | Validation des cartes d'appartement |
+| `validation/fichiers.py` | Validation de tous les fichiers d'entrées en appelant les resultats des autres fichiers de validation |
+| `reconfort_io.py` | Chargement des fichiers et génération des traces JSON |
+| `tests/` | Tests unitaires et tests d'intégration |
+| `cartes/` | Fichiers de cartes fournis |
+| `donnees/` | Fichiers de données de dictionnaire et d'armoire fournis |
+| `rendu.json` | Configuration de lancement pour le correcteur |
 
-Votre agent n'a le droit de lire ni le champ `grille` de la carte, ni le
-champ `objet` des casiers. Il découvre les murs case par case à travers ses
-perceptions, et le contenu des casiers en se plaçant devant. Voir les
-sections 3.2 et 3.3 de l'énoncé : c'est vérifié à la correction.
+## État
 
-Si l'algorithmique des graphes ne vous est pas familière, lisez l'annexe B
-de l'énoncé avant d'écrire quoi que ce soit : elle contient tout le
-nécessaire.
+**Ce qui marche.** *À compléter.*
+Les 5 cartes fournies : toutes les demandes sont livrées, et la trace rejouée contre la réalité ne contient aucune erreur. Le robot replanifie à chaque pas quand il découvre un mur. Le résident muré est détecté (le BFS échoue sur la carte mentale, où les cases inconnues sont supposées libres : c'est une preuve, annexe B.6), et la demande suivante continue normalement. Une armoire vide donne « armoire vide » après avoir regardé les 15 casiers. Les fichiers cassés de la section 5.6 sont refusés avec un message clair, un code de retour 1 et sans trace.
+Le robot suit l'ordre de la section 4 : dictionnaire, armoire, résident. Les échecs n'utilisent que les trois motifs de l'énoncé.
+**Ce qui ne marche pas.** *À compléter — soyez honnêtes, c'est noté en
+votre faveur.*
+Résident muré découvert après PRENDRE : le robot garde l'objet dans les mains, car aucune action ne permet de le poser. Pour la suite :
+s'il a déjà la preuve qu'un résident est muré, il ne prend rien pour lui ;
+à la demande suivante, si l'objet choisi est celui qu'il porte déjà, il le donne sans PRENDRE ;
+sinon il ne peut rien prendre (un seul objet à la fois) et la demande échoue avec le motif « armoire vide ». L'énoncé ne prévoit pas ce cas : c'est le choix le plus proche qu'on a trouvé.
+Dictionnaire ou armoire murés : l'énoncé ne prévoit pas de motif. On note « emotion indeterminee » (le robot n'a pas pu lire l'émotion) ou « armoire vide » (il n'a pas pu prendre d'objet).
+Le robot recalcule tout le BFS à chaque pas (et meilleure_destination fait un BFS pour chacune des 4 cases autour de la cible). C'est simple et rapide sur nos cartes, mais ça recalcule beaucoup.
+Dans l'armoire, le sélecteur bouge toujours d'abord verticalement, puis horizontalement. Il repasse parfois devant des casiers déjà vus vides (comme dans l'annexe C.5).
+## Vidéo
+
+`demo.mp4` , également déclarée dans `rendu.json`.

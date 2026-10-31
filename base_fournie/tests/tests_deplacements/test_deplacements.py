@@ -1,21 +1,34 @@
 from pathlib import Path
-from deplacements.deplacements import calcul_chemin,aller_vers,deplacement,perception,update_memoire,initialiser_memoire,charger_appartement,creer_carte_memoire,meilleure_destination
+import reconfort_io as rio
+from deplacements.deplacements import calcul_chemin,deplacement,update_memoire,initialiser_memoire,creer_carte_memoire,meilleure_destination
+from monde.monde_appartement import MondeAppartement
+from robot.perception import SYMBOLES
 
 # Dossier contenant les cartes utilisées pour les tests
 DOSSIER_CARTES = Path(__file__).parent/"deplacement_cartes"
+
+# Ce que le robot voit autour de lui (le monde repond, en symboles pour la carte mentale)
+def perception(monde, position):
+    return {d: SYMBOLES[v] for d, v in monde.percevoir(position).items()}
+
 def initialiser_test(nom_fichier):
     chemin_fichier = DOSSIER_CARTES/nom_fichier
     assert chemin_fichier.is_file(),(f"Carte de test introuvable : {chemin_fichier}")
-    appartement,hauteur,largeur,pos_robot,pos_residents,pos_dict,pos_armoire,grille = charger_appartement(str(chemin_fichier))
-    memoire = creer_carte_memoire(hauteur, largeur)
+    appartement = rio.charger_carte(chemin_fichier)
+    pos_robot = appartement["depart_robot"]
+    pos_residents = [resident["position"] for resident in appartement["residents"]]
+    pos_dict = appartement["dictionnaire"]["position"]
+    pos_armoire = appartement["armoire"]["position"]
+    monde = MondeAppartement(chemin_fichier)
+    memoire = creer_carte_memoire(appartement["dimensions"]["hauteur"], appartement["dimensions"]["largeur"])
     memoire = initialiser_memoire(memoire,pos_robot,pos_residents,pos_dict,pos_armoire)
-    perception_robot = perception(grille, pos_robot)
+    perception_robot = perception(monde, pos_robot)
     memoire = update_memoire(perception_robot,memoire,pos_robot)
-    return memoire,pos_robot,pos_residents,pos_dict,pos_armoire,grille,str(chemin_fichier)
+    return memoire,pos_robot,pos_residents,pos_dict,pos_armoire,monde,str(chemin_fichier)
 
 # TEST 1 : BFS - CHEMIN SIMPLE
 def test_bfs_chemin_simple():
-    memoire,pos_robot,pos_residents,pos_dict,pos_armoire,grille,chemin_fichier = initialiser_test("test_bfs_chemin_connu.json")
+    memoire,pos_robot,pos_residents,pos_dict,pos_armoire,monde,chemin_fichier = initialiser_test("test_bfs_chemin_connu.json")
     depart = pos_robot
     cible = pos_residents[0]
     # Trouver une case adjacente au résident
@@ -35,7 +48,7 @@ def test_bfs_chemin_simple():
 
 # TEST 2 : BFS - REPLANIFICATION APRÈS DÉCOUVERTE D'UN MUR
 def test_bfs_chemin_replanification():
-    memoire,pos_robot,pos_residents,pos_dict,pos_armoire,grille,chemin_fichier= initialiser_test("test_replanification.json")
+    memoire,pos_robot,pos_residents,pos_dict,pos_armoire,monde,chemin_fichier= initialiser_test("test_replanification.json")
     depart = pos_robot
     cible = pos_residents[0]
     # Destination adjacente au résident
@@ -51,7 +64,7 @@ def test_bfs_chemin_replanification():
     position_actuelle = deplacement(memoire,depart,chemin[1],)
     assert position_actuelle == chemin[1]
     # Il découvre son nouvel environnement
-    perception_actuelle = perception(grille,position_actuelle,)
+    perception_actuelle = perception(monde,position_actuelle,)
     memoire = update_memoire(perception_actuelle,memoire,position_actuelle,)
     # Vérifier que le mur a bien été découvert
     assert memoire[1][3] == "#"
@@ -66,12 +79,20 @@ def test_bfs_chemin_replanification():
     assert [1, 3] not in nouveau_chemin
 # TEST 3 : DESTINATION INACCESSIBLE
 def test_bfs_chemin_impossible():
-    memoire,pos_robot,pos_residents, pos_dict,pos_armoire,grille,chemin_fichier = initialiser_test("test_bfs_inaccessible.json")
+    memoire,pos_robot,pos_residents, pos_dict,pos_armoire,monde,chemin_fichier = initialiser_test("test_bfs_inaccessible.json")
     cible = pos_residents[0]
-    memoire_finale, position_finale = aller_vers(memoire,pos_robot,cible,chemin_fichier,)
+    # Le vrai robot essaie d'y aller, en decouvrant les murs au fur et a mesure
+    from robot.agent import Agent
+    from monde.monde_armoire import MondeArmoire
+    armoire = rio.charger_armoire("donnees/armoire_standard.json")
+    trace = rio.Trace("test", "test")
+    agent = Agent(rio.charger_carte(chemin_fichier), armoire, None, monde, MondeArmoire(armoire), trace)
     # Le robot doit signaler que la destination est inaccessible
-    assert position_finale is None
-    assert memoire_finale is not None
+    assert agent.aller_a(cible, 1) is False
+    # Et il n'a jamais fait de pas illegal (que des AVANCER vers des cases libres)
+    for pas in trace.pas:
+        assert pas["action"] == "AVANCER"
+        assert pas["perception"][pas["argument"]] == "libre"
 
 # TEST 4 : DÉPLACEMENT VISUEL DU ROBOT
 def test_deplacement_robot():
@@ -104,7 +125,7 @@ def test_deplacement_robot():
 
 # TEST 5 : MEILLEURE DESTINATION ADJACENTE
 def test_meilleure_destination():
-    memoire,pos_robot,pos_residents, pos_dict,pos_armoire,grille,chemin_fichier = initialiser_test("test_bfs_inaccessible.json")
+    memoire,pos_robot,pos_residents, pos_dict,pos_armoire,monde,chemin_fichier = initialiser_test("test_bfs_inaccessible.json")
     depart = [1, 1]
     cible = [2, 3]
     destination = meilleure_destination(memoire,depart,cible,)

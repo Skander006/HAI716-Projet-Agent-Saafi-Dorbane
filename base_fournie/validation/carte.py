@@ -230,9 +230,38 @@ def verifier_doublons_ID(carte):
             print("Erreur : Deux résidents partagent le même ID", file = sys.stderr)
             return False
         ids_residents.append(resident["id"])
-
     return True
 
+# Vérifier qu'il existe exactement un robot
+def verifier_existence_seul_robot(grille, residents):
+    nombre_robots = sum(ligne.count("R") for ligne in grille)
+
+    if nombre_robots != 1:
+        print(
+            f"Erreur : {nombre_robots} cases R (2 cases R ou nombre invalide)",
+            file=sys.stderr
+        )
+        return False
+
+    positions_p = {
+        (i, j)
+        for i, ligne in enumerate(grille)
+        for j, symbole in enumerate(ligne)
+        if symbole == "P"
+    }
+
+    positions_residents = {
+        tuple(resident["position"])
+        for resident in residents
+    }
+
+    if positions_p != positions_residents:
+        print(
+            "Erreur : une case P ne correspond à aucun resident",
+            file=sys.stderr
+        )
+        return False
+    return True
 #Validation du fichier de carte d'entrée
 def valider_carte(chemin):
     carte = verifier_fichier(chemin)
@@ -257,5 +286,7 @@ def valider_carte(chemin):
     if not verifier_symboles(carte):
         return False
     if not verifier_doublons_ID(carte):
+        return False
+    if not verifier_existence_seul_robot(carte["grille"], carte["residents"]):
         return False
     return True

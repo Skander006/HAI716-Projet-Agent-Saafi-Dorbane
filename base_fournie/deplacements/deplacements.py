@@ -45,7 +45,7 @@ def calcul_chemin(carte_memoire, position_depart, position_arrivee):
     file = deque([position_depart])
     parents = {tuple(position_depart) : None}       #Ca on le met pour optimiser la recherche et ne pas tomber sur une case déjà visitée 
     while file:
-        position = file.popleft
+        position = file.popleft()
         if position == position_arrivee:
             break
         ligne = position[0]
