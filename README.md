@@ -42,26 +42,26 @@ python -m pytest -v
 
 | Fichier | Rôle |
 |---|---|
-| `main.py` | Point d'entrée, initialisation et exécution des scénarios |
-| `robot/agent.py` | Boucle de décision et coordination des actions |
-| `robot/perception.py` | Perception locale de l'environnement |
-| `robot/memoire.py` | Gestion de la carte mémoire et de l'état du robot |
-| `robot/decision.py` | Planification et choix des actions |
-| `robot/action.py` | Exécution des actions du robot |
-| `robot/emotions.py` | Reconnaissance des émotions et des intensités |
-| `robot/armoire.py` | Recherche et sélection des objets de réconfort |
-| `robot/affichage.py` | Gère l'affichage de la grille, les actions du robot et tout ce qui est visuel à chaque tour|
-| `deplacements/deplacements.py` | Calcul des chemins BFS et déplacements |
-| `monde/monde_armoire.py` | Simulation de l'armoire et de ses casiers |
-| `monde/monde_appartement.py` | Simulation de l'appartement |
-| `validation/armoire_dictionnaire.py` | Validation du dictionnaire et des armoires |
-| `validation/carte.py` | Validation des cartes d'appartement |
-| `validation/fichiers.py` | Validation de tous les fichiers d'entrées en appelant les resultats des autres fichiers de validation |
-| `reconfort_io.py` | Chargement des fichiers et génération des traces JSON |
-| `tests/` | Tests unitaires et tests d'intégration |
-| `cartes/` | Fichiers de cartes fournis |
-| `donnees/` | Fichiers de données de dictionnaire et d'armoire fournis |
-| `rendu.json` | Configuration de lancement pour le correcteur |
+| `base_fournie/main.py` | Point d'entrée, initialisation et exécution des scénarios |
+| `base_fournie/robot/agent.py` | Boucle de décision et coordination des actions |
+| `base_fournie/robot/perception.py` | Perception locale de l'environnement |
+| `base_fournie/robot/memoire.py` | Gestion de la carte mémoire et de l'état du robot |
+| `base_fournie/robot/decision.py` | Planification et choix des actions |
+| `base_fournie/robot/action.py` | Exécution des actions du robot |
+| `base_fournie/robot/emotions.py` | Reconnaissance des émotions et des intensités |
+| `base_fournie/robot/armoire.py` | Recherche et sélection des objets de réconfort |
+| `base_fournie/robot/affichage.py` | Gère l'affichage de la grille, les actions du robot et tout ce qui est visuel à chaque tour|
+| `base_fournie/deplacements/deplacements.py` | Calcul des chemins BFS et déplacements |
+| `base_fournie/monde/monde_armoire.py` | Simulation de l'armoire et de ses casiers |
+| `base_fournie/monde/monde_appartement.py` | Simulation de l'appartement |
+| `base_fournie/validation/armoire_dictionnaire.py` | Validation du dictionnaire et des armoires |
+| `base_fournie/validation/carte.py` | Validation des cartes d'appartement |
+| `base_fournie/validation/fichiers.py` | Validation de tous les fichiers d'entrées en appelant les resultats des autres fichiers de validation |
+| `base_fournie/reconfort_io.py` | Chargement des fichiers et génération des traces JSON |
+| `base_fournie/tests` | Tests unitaires et tests d'intégration |
+| `base_fournie/cartes` | Fichiers de cartes fournis |
+| `base_fournie/donnees` | Fichiers de données de dictionnaire et d'armoire fournis |
+| `base_fournie/rendu.json` | Configuration de lancement pour le correcteur |
 
 ## État
 
@@ -79,4 +79,4 @@ Le robot recalcule tout le BFS à chaque pas (et meilleure_destination fait un B
 Dans l'armoire, le sélecteur bouge toujours d'abord verticalement, puis horizontalement. Il repasse parfois devant des casiers déjà vus vides (comme dans l'annexe C.5).
 ## Vidéo
 
-`demo.mp4` , également déclarée dans `rendu.json`.
+`demo.mp4` , également déclarée dans `base_fournie/rendu.json`.
