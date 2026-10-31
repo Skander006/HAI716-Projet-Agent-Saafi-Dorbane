@@ -1,0 +1,165 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[top=2cm,bottom=2cm,left=2cm,right=2cm,headsep=0.5cm]{geometry}
+\usepackage{tikz}
+\usepackage{adjustbox}
+\usetikzlibrary{positioning,arrows.meta,fit}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+\setlist{nosep,leftmargin=1.4em}
+\setlength{\parskip}{0.15em}
+\captionsetup{font=small,labelfont=bf,skip=4pt}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small HAI716 --- Robot de réconfort}
+\fancyhead[R]{\small SAAFI \& DORBANE}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+
+% ============================ PAGE DE GARDE ============================
+\begin{titlepage}
+\centering
+{\large Université de Montpellier --- Faculté des Sciences\par}
+{\large Master Informatique\par}
+\vspace{0.3cm}
+{\normalsize UE HAI716 --- Projet de semestre\par}
+\vspace{3cm}
+\rule{\linewidth}{0.8pt}\\[0.5cm]
+{\LARGE\bfseries Le robot de réconfort\par}
+\vspace{0.3cm}
+{\Large Un agent à perception locale dans un environnement inconnu\par}
+\vspace{0.3cm}
+\rule{\linewidth}{0.8pt}\\[0.4cm]
+{\large Rapport du projet 1\par}
+\vspace{2.5cm}
+{\large\textbf{Auteurs}\\[0.2cm]
+Skander SAAFI\\
+Abdellah DORBANE\par}
+\vspace{2.5cm}
+\begin{minipage}{0.85\linewidth}
+\small
+\textbf{Résumé.} Ce rapport présente le robot de réconfort que nous avons développé en Python. Le robot découvre les murs de l'appartement en se déplaçant, trouve l'émotion d'un message grâce à un dictionnaire, cherche un objet dans une armoire, puis l'apporte au résident. Sur les cinq scénarios fournis, les 29 demandes sont livrées.
+\end{minipage}
+\vfill
+{\large Année universitaire 2026--2027\par}
+\end{titlepage}
+
+% ============================ INTRODUCTION ============================
+\section{Introduction}
+
+Une résidence est équipée d'un robot de service. Chaque résident peut lui envoyer un court message. Le robot doit alors trouver l'émotion du message grâce à un dictionnaire, chercher dans une armoire l'objet de réconfort qui correspond, puis l'apporter au résident. La difficulté principale est que le robot ne connaît pas le plan de l'appartement : à chaque tour, il ne voit que les quatre cases autour de lui. Il ne sait pas non plus ce que contient un casier tant qu'il ne l'a pas regardé. Nous avons écrit ce robot en Python~3.12.
+
+Ce rapport présente l'organisation du code (section~\ref{sec:archi}), la façon dont le robot change de chemin (section~\ref{sec:replan}), la façon dont il choisit le casier (section~\ref{sec:repli}) et un cas où notre robot échoue (section~\ref{sec:echecs}).
+
+% ============================ ARCHITECTURE ============================
+\section{Architecture de l'agent}\label{sec:archi}
+
+\begin{figure}[h]
+\centering
+\begin{adjustbox}{max width=\textwidth}
+\begin{tikzpicture}[
+  box/.style={draw,rounded corners,align=center,font=\small,text width=2.35cm,minimum height=2.6em,inner sep=3pt},
+  robot/.style={box,fill=blue!8},
+  monde/.style={box,fill=orange!12},
+  outil/.style={box,fill=gray!10},
+  lab/.style={font=\scriptsize,above},
+  fl/.style={-{Stealth},thick}]
+  % les quatre parties de l'agent
+  \node[robot] (perc) at (3.4,0)  {\textbf{Perception}\\\code{perception.py}};
+  \node[robot] (mem)  at (7.0,0)  {\textbf{Mémoire}\\\code{memoire.py}};
+  \node[robot] (dec)  at (10.6,0) {\textbf{Décision}\\\code{decision.py}\\\code{armoire.py}};
+  \node[robot] (act)  at (14.2,0) {\textbf{Action}\\\code{action.py}};
+  \node[draw,dashed,inner sep=5pt,fit=(perc)(mem)(dec)(act)] (agentbox) {};
+  \node[font=\scriptsize,anchor=south west,align=left] at (agentbox.north west) {\code{robot/agent.py} :\\percevoir $\to$ décider $\to$ agir};
+  % le monde
+  \node[monde,text width=3cm] (mapp) at (-1.0,0.6)  {\code{MondeAppartement}\\seul à lire \code{grille}};
+  \node[monde,text width=3cm] (marm) at (-1.0,-0.7) {\code{MondeArmoire}\\seul à lire \code{objet}};
+  \node[font=\scriptsize,orange!70!black,below=1pt of marm] {simulateur (la réalité)};
+  % lancement et sortie
+  \node[outil] (main)  at (3.4,2.5)  {\code{main.py}};
+  \node[outil] (valid) at (7.0,2.5)  {\code{validation/}\\4 fichiers vérifiés};
+  \node[outil,text width=3cm] (io)    at (14.2,2.5) {\code{reconfort\_io.py}\\trace JSON};
+  \node[outil,text width=2.8cm] (bfs)   at (10.6,-2.3) {\code{deplacements.py}\\calcul des chemins};
+  \draw[fl] (main) -- (valid);
+  \draw[fl] (valid) -- node[right,font=\scriptsize,pos=0.35]{données valides} (mem);
+  \draw[fl] (act) -- node[right,font=\scriptsize]{journalise} (io);
+  \draw[fl] (mapp.east) -- node[lab,pos=0.45]{4 cases} (perc.west);
+  \draw[fl] (marm.east) -- node[below,pos=0.45,font=\scriptsize]{casier} (perc.west);
+  \draw[fl] (perc) -- node[lab]{écrit} (mem);
+  \draw[fl] (mem) -- node[lab]{lit} (dec);
+  \draw[fl] (dec) -- node[lab]{choisit} (act);
+  \draw[fl,dashed] (dec) -- node[right,font=\scriptsize]{utilise} (bfs);
+  \draw[fl] (act.south) |- (mem.south |- 0,-1.35) -- (mem.south);
+  \node[font=\scriptsize,above] at (9.0,-1.35) {position, sélecteur, objet};
+\end{tikzpicture}
+\end{adjustbox}
+\caption{Architecture du robot. En bleu, les quatre parties de l'agent ; en orange, le simulateur, seul à connaître la réalité.}
+\label{fig:archi}
+\end{figure}
+
+La figure~\ref{fig:archi} montre comment le code est organisé. À chaque tour, le robot fait toujours la même chose : il regarde autour de lui, il met à jour ce qu'il sait, il décide, puis il agit. Nous avons séparé ces quatre étapes selon une règle simple : \textbf{chaque partie n'a accès qu'à ce dont elle a besoin}.
+\begin{itemize}
+  \item La \textbf{perception} est la seule partie qui communique avec le monde. Elle donne au robot les quatre cases autour de lui, et le contenu du casier quand il est devant l'armoire. Seule exception : pendant la fouille, \code{armoire.py} regarde lui-même le casier devant le sélecteur. Le plan complet et le contenu de l'armoire ne sont connus que du simulateur (\code{monde/}).
+  \item La \textbf{mémoire} garde ce que le robot a appris : sa carte (avec \code{?} pour les cases inconnues), sa position, l'objet qu'il porte et les casiers déjà vus. Elle est gardée d'une demande à l'autre.
+  \item La \textbf{décision} choisit la prochaine action en lisant seulement la mémoire, ce qui la rend facile à tester.
+  \item L'\textbf{action} exécute ce qui a été décidé et l'écrit dans la trace.
+\end{itemize}
+
+% ============================ REPLANIFICATION ============================
+\section{Stratégie de replanification}\label{sec:replan}
+
+Au départ, le robot ne connaît pas les murs. Il fait donc une supposition simple : \textbf{toute case qu'il n'a pas encore vue est libre}~\cite{enonce}. Ensuite, il ne garde pas un plan fixe : \textbf{il recalcule son chemin à chaque pas}. À chaque tour :
+\begin{enumerate}
+  \item il regarde les quatre cases autour de lui et les note dans sa carte ;
+  \item il calcule le plus court chemin vers sa cible, avec ce qu'il sait (parcours en largeur) ;
+  \item il fait seulement le premier pas de ce chemin, puis recommence.
+\end{enumerate}
+Quand il découvre un mur sur sa route, il n'a rien de spécial à faire : au tour suivant, le nouveau calcul tient compte de ce mur et trouve un autre chemin. Si aucun chemin n'est trouvé, même en supposant libres toutes les cases inconnues, alors il n'en existe pas dans la réalité : la cible est inaccessible. Le robot le vérifie avant de prendre un objet, pour ne pas prendre un objet qu'il ne pourra pas donner.
+
+\textbf{Coût.} Le calcul reste instantané sur ces cartes. Le vrai coût, ce sont les détours vers des passages bouchés : entre 8\,\% et 30\,\% de pas en plus que si le robot connaissait les murs. Nous avons gardé cette méthode car elle est simple et toujours juste.
+
+% ============================ REPLI ============================
+\section{Choix du casier dans l'armoire}\label{sec:repli}
+
+Notre robot applique la règle de repli de l'énoncé (section~6.2), qui s'appuie sur la roue de Plutchik~\cite{plutchik}. Une fois l'émotion et l'intensité connues :
+\begin{enumerate}
+  \item il garde les 15 casiers dont l'émotion est à une distance de 2 ou moins sur la roue ;
+  \item il les range dans l'ordre imposé : distance sur la roue, puis écart d'intensité, puis intensité la plus faible, puis sens horaire ;
+  \item il déplace le sélecteur casier par casier et prend l'objet du \textbf{premier casier garni} de cette liste.
+\end{enumerate}
+Le robot ne connaît le contenu d'un casier qu'en passant devant, et il retient les casiers déjà vus d'une demande à l'autre. S'il croise un casier garni moins bien placé dans la liste, il ne le prend pas. Si les 15 casiers sont vides, la demande échoue avec le motif \og armoire vide\fg{}. Par exemple, pour \code{surprise/forte} (scénario~3), la colonne surprise est vide : le robot regarde d'abord les trois casiers surprise, puis prend le téléphone (\code{tristesse/forte}), et la trace indique le repli \code{voisine\_1}.
+
+\textbf{Piste d'amélioration.} Lors de nos tests, nous avons remarqué qu'une émotion proche sur la roue ne donne pas toujours l'objet le plus adapté : pour une personne triste, le désodorisant (dégoût) passe avant la veilleuse (peur). Une piste serait d'indiquer dans le fichier d'armoire, pour chaque émotion, la liste des émotions de remplacement acceptables. Il faudrait alors adapter \code{armoire.json}, sa validation et la fonction \code{casiers\_candidats}.
+% ============================ ECHEC ============================
+\section{Un échec de notre robot}\label{sec:echecs}
+
+\textbf{Ce qui se passe.} Nous avons dessiné une petite carte où le résident R2 est enfermé entre quatre murs. De loin, le robot ne peut pas le voir. Quand il arrive à l'armoire, il pense donc pouvoir rejoindre R2 et il prend la couverture. Sur le chemin, il découvre les murs et comprend que R2 est inaccessible : jusque-là, c'est le bon comportement. Le problème vient ensuite. Le robot ne peut pas reposer la couverture, car aucune action ne le permet. À la demande suivante, R1 est joyeux : le robot ne peut pas prendre un deuxième objet, et la demande échoue avec le motif \og armoire vide\fg{}, alors que le bon casier est plein.
+
+\textbf{Pourquoi.} Le robot ne connaît que les murs qu'il a déjà vus. Quand il est à l'armoire, il n'a pas encore vu ceux qui entourent R2 : sur sa carte, ces cases sont encore inconnues, donc supposées libres, et un chemin vers R2 semble exister. Le robot ne peut savoir que R2 est enfermé qu'en s'approchant de lui, donc après avoir pris l'objet. Comme il ne porte qu'un objet à la fois, il ne peut plus en prendre un autre ensuite.
+
+\textbf{Ce qu'on pourrait faire.} Vérifier le chemin jusqu'au résident avant de prendre l'objet : cela coûte des pas, mais évite de rester bloqué.
+
+% ============================ CONCLUSION ============================
+\section{Conclusion}
+
+Notre robot respecte la perception locale, son code est séparé en quatre parties claires, et il livre toutes les demandes des scénarios fournis. L'échec étudié montre qu'un robot qui ne voit pas tout peut se tromper au mauvais moment. Pour le projet~2, nous réutiliserons cette organisation avec plusieurs robots.
+
+\begin{thebibliography}{9}\small
+\bibitem{enonce} Projet --- Le robot de réconfort, énoncé du projet de semestre, Master Informatique, UE HAI716.
+\bibitem{plutchik} R.~Plutchik, \emph{Emotion: A Psychoevolutionary Synthesis}, Harper \& Row, 1980.
+\end{thebibliography}
+
+\end{document}
