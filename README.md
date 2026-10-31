@@ -8,6 +8,7 @@ Langage : *Python* — Version : *Python 3.12*
 
 ## Lancer
 
+Depuis base_fournie
 ```
 python main.py <carte.json> <scenario.json> <dossier_donnees> <trace_sortie.json>
 ```
@@ -65,11 +66,10 @@ python -m pytest -v
 
 ## État
 
-**Ce qui marche.** *À compléter.*
+**Ce qui marche.**
 Les 5 cartes fournies : toutes les demandes sont livrées, et la trace rejouée contre la réalité ne contient aucune erreur. Le robot replanifie à chaque pas quand il découvre un mur. Le résident muré est détecté (le BFS échoue sur la carte mentale, où les cases inconnues sont supposées libres : c'est une preuve, annexe B.6), et la demande suivante continue normalement. Une armoire vide donne « armoire vide » après avoir regardé les 15 casiers. Les fichiers cassés de la section 5.6 sont refusés avec un message clair, un code de retour 1 et sans trace.
 Le robot suit l'ordre de la section 4 : dictionnaire, armoire, résident. Les échecs n'utilisent que les trois motifs de l'énoncé.
-**Ce qui ne marche pas.** *À compléter — soyez honnêtes, c'est noté en
-votre faveur.*
+**Ce qui ne marche pas.** 
 Résident muré découvert après PRENDRE : le robot garde l'objet dans les mains, car aucune action ne permet de le poser. Pour la suite :
 s'il a déjà la preuve qu'un résident est muré, il ne prend rien pour lui ;
 à la demande suivante, si l'objet choisi est celui qu'il porte déjà, il le donne sans PRENDRE ;
@@ -79,4 +79,4 @@ Le robot recalcule tout le BFS à chaque pas (et meilleure_destination fait un B
 Dans l'armoire, le sélecteur bouge toujours d'abord verticalement, puis horizontalement. Il repasse parfois devant des casiers déjà vus vides (comme dans l'annexe C.5).
 ## Vidéo
 
-`demo.mp4` , également déclarée dans `base_fournie/rendu.json`.
+`video/demo.mp4` , également déclarée dans `base_fournie/rendu.json`.

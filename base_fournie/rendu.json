@@ -5,6 +5,6 @@
   "langage": "Python 3",
   "preparation": [],
   "commande": ["python", "main.py"],
-  "video": "demo.mp4",
-  "rapport" : "rapport.pdf"
+  "video": "video/demo.mp4",
+  "rapport" : "rapport/rapport.pdf"
 }
