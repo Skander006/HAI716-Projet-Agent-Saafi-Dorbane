@@ -1,25 +1,6 @@
-#Moteur de déplacement
-import json
-import sys
-from math import *
-from .verification import valider_carte
-#Chargement de l'appartement pour récuperer sa taille exacte
-def charger_appartement(chemin):
-    if not valider_carte(chemin):
-        print("Erreur : Fichier de carte invalide", file=sys.stderr)
-        sys.exit(1)
-    with open(chemin, "r", encoding="utf-8") as fichier:
-        appartement = json.load(fichier)
-    hauteur = appartement["dimensions"]["hauteur"]
-    largeur = appartement["dimensions"]["largeur"]
-    pos_robot = appartement["depart_robot"]
-    pos_residents = []
-    for resident in appartement["residents"]:
-        pos_residents.append(resident["position"])
-    pos_dict = appartement["dictionnaire"]["position"]
-    pos_armoire = appartement["armoire"]["position"]
-    grille = appartement["grille"]
-    return appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire, grille
+#Moteur de déplacement du robot
+
+from collections import deque
 
 #Creation de la carte memoire
 def creer_carte_memoire(hauteur, largeur):
@@ -40,17 +21,6 @@ def initialiser_memoire(carte, pos_robot, pos_residents, pos_dict, pos_armoire):
         carte[pos_resident[0]][pos_resident[1]] = 'P'
     return carte
 
-#Fonction de perception des alentours
-def perception(grille, position):
-    ligne = position[0]
-    colonne = position[1]
-    perception = {}
-    perception["N"] = grille[ligne-1][colonne]
-    perception["S"] = grille[ligne+1][colonne]
-    perception["E"] = grille[ligne][colonne+1]
-    perception["O"] = grille[ligne][colonne-1]
-    return perception
-
 #Mise à jour après perception des alentours
 def update_memoire(perception, memoire, position):
     ligne = position[0]
@@ -65,7 +35,6 @@ def update_memoire(perception, memoire, position):
         nouvelle_ligne = ligne + dl
         nouvelle_colonne = colonne + dc
         symbole = perception[direction]
-        # Le R de la carte originale représente le départ
         if symbole == "R":
             symbole = "."
         memoire[nouvelle_ligne][nouvelle_colonne] = symbole
@@ -73,10 +42,10 @@ def update_memoire(perception, memoire, position):
 
 #Fonction pour calculer le chemin entre le robot et les autres points
 def calcul_chemin(carte_memoire, position_depart, position_arrivee):
-    file = [position_depart]
+    file = deque([position_depart])
     parents = {tuple(position_depart) : None}       #Ca on le met pour optimiser la recherche et ne pas tomber sur une case déjà visitée 
     while file:
-        position = file.pop(0)
+        position = file.popleft
         if position == position_arrivee:
             break
         ligne = position[0]
@@ -150,12 +119,6 @@ def deplacement(memoire, pos_actuelle, pos_suivante):  #Ici on ne fait pas le ca
     memoire[pos_suivante[0]][pos_suivante[1]] = "R"
     return  pos_suivante
 
-#Permet l'affichage de la memoire
-def afficher_memoire(memoire):
-    print("\nCarte mémoire du robot :")
-    for ligne in memoire:
-        print(" ".join(ligne))
-    print()
 def direction_entre(case_depart, case_arrivee):
     dl = case_arrivee[0] - case_depart[0]
     dc = case_arrivee[1] - case_depart[1]
@@ -166,62 +129,3 @@ def direction_entre(case_depart, case_arrivee):
     if dc == 1:
         return "E"
     return "O"
-#Fonction finale pour le deplacement
-def aller_vers(memoire, position_actuelle, point, chemin):
-    pas_faits = []
-    #Initialisation
-    appartement, hauteur, largeur, pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement(chemin)
-    while True:
-        #Perception
-        perception_memoire = perception(grille, position_actuelle)
-        #Update
-        memoire = update_memoire(perception_memoire, memoire, position_actuelle)
-        # Distance de Manhattan entre le robot et la cible
-        distance = (abs(position_actuelle[0] - point[0]) + abs(position_actuelle[1] - point[1]))
-        # Le robot est déjà adjacent à la cible
-        if distance == 1:
-            print("Robot arrivé à côté de la cible :", point)
-            return memoire, position_actuelle, pas_faits
-        #Trouver meilleure position adjacente de la destination (car on ne peut pas la traverser)
-        meilleure_position = meilleure_destination(memoire, position_actuelle, point)
-        if meilleure_position is None:
-            print("Aucune case adjacente accessible à la cible : ", point)
-            return memoire, None
-        #Calculer BFS
-        chemin = calcul_chemin(memoire, position_actuelle, meilleure_position)
-        if chemin is None or len(chemin) < 2:
-            print("Chemin impossible à trouver !", file=sys.stderr)
-            return memoire, None
-        print("Chemin à parcourir : ",chemin)
-        #Deplacement
-        prochain_point = chemin[1]
-        position_actuelle = deplacement(memoire, position_actuelle, prochain_point)
-        pas_faits.append({"position": position_actuelle, "direction": direction_entre(position_actuelle, prochain_point)})
-        print("Position actuelle : ",position_actuelle)
-        afficher_memoire(memoire)
-
-
-#Tests dans le main
-if __name__ == "__main__":
-    appartement, hauteur, largeur,pos_robot, pos_residents, pos_dict, pos_armoire, grille = charger_appartement(sys.argv[1])
-    print("Hauteur : ",hauteur)
-    print("Largeur : ",largeur)
-    print("Position Robot : ",pos_robot)
-    print("Position des residents", pos_residents)
-    print("Position du dictionnaire : ", pos_dict)
-    print("Position de l'armoire : ", pos_armoire)
-    carte = creer_carte_memoire(hauteur, largeur)
-    """
-    print(carte_init)
-    print("Perception actuelle : ",perception)
-    carte_updated = update_memoire(perception, carte_init, pos_robot)
-    print("Memoire mise à jour : ", carte_updated)
-    print(calcul_chemin(carte_updated, pos_robot, pos_dict))
-    pos_suivante = calcul_chemin(carte_updated, pos_robot, pos_dict)[0]
-    print(deplacement(pos_robot, pos_suivante))
-    """
-    perception_robot = perception(grille, pos_robot)
-    carte_init = initialiser_memoire(carte, pos_robot, pos_residents, pos_dict, pos_armoire)
-    carte_updated = update_memoire(perception_robot, carte_init, pos_robot)
-    memoire, pos_actuelle = aller_vers(carte_updated, pos_robot, pos_dict, sys.argv[1])
-    afficher_memoire(memoire)
