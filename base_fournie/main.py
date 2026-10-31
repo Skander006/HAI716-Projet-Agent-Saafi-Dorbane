@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 import reconfort_io as rio
-from deplacements.verification import valider_carte
+from base_fournie.validation.verification_carte import valider_carte
 from deplacements.deplacements import (
     creer_carte_memoire, initialiser_memoire, update_memoire,
     calcul_chemin, meilleure_destination, deplacement,

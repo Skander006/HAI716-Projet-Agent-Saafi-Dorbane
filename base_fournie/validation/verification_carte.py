@@ -18,6 +18,7 @@ def verifier_fichier(chemin):
         print("Erreur : Fichier de carte contient un JSON invalide", file=sys.stderr)
         return False
     return carte
+
 #Verification de la presence de tous les champs obligatoire du json
 def verifier_presence(carte):
     champs_obligatoires = ["format", "version","nom", "dimensions", "legende", "grille", "depart_robot", "armoire", "residents", "dictionnaire"]
@@ -25,6 +26,13 @@ def verifier_presence(carte):
         if not champ in carte:
             print(f"Erreur : Le champ {champ} est obligatoire", file=sys.stderr)
             return False
+    for champ in ["dimensions", "legende", "armoire", "dictionnaire"]:
+        if type(carte[champ]) != dict:
+            print(f"Erreur : Le champ {champ} doit etre un objet", file=sys.stderr)
+            return False
+    if type(carte["residents"]) != list:
+        print("Erreur : Le champ residents doit etre une liste", file=sys.stderr)
+        return False
     #Verification pour l'hauteur et la largeur des dimensions
     if not ("hauteur" in carte["dimensions"] and "largeur" in carte["dimensions"]):
         print("Erreur : Le champ dimensions doit contenir les champs hauteur et largeur", file=sys.stderr)
@@ -43,6 +51,9 @@ def verifier_presence(carte):
         return False
     #Verification de la presence des champs de chaque resident
     for resident in carte["residents"]:
+        if type(resident) != dict:
+            print("Erreur : Chaque resident doit etre un objet", file=sys.stderr)
+            return False
         if not ("id" in resident and "nom" in resident and "position" in resident):
             print("Erreur : Le champ residents manque quelques champs", file=sys.stderr)
             return False
@@ -118,7 +129,7 @@ def verifier_format(carte):
     return True
 #Fichier contient une version inattendue
 def verifier_version(carte):
-    if(carte["version"] != 1):
+    if type(carte["version"]) != int or carte["version"] != 1 :
         print("Erreur : Version du fichier de carte invalide", file=sys.stderr)
         return False
     return True
@@ -126,7 +137,7 @@ def verifier_version(carte):
 def verifier_coherence_dimensions(carte):
     #Verification de la cohérence des dimensions
     if carte["dimensions"]["hauteur"] <= 0 or carte["dimensions"]["largeur"] <= 0:
-        print("Erreur : les dimensions ne sont pas cohérents", file = sys.stderr)
+        print("Erreur : les dimensions ne sont pas cohérentes", file = sys.stderr)
         return False
     #Coherence entre dimensions et grille
     if len(carte["grille"]) != carte["dimensions"]["hauteur"]:
@@ -180,7 +191,7 @@ def verifier_positions_hors_grille(carte):
             print("Erreur : La position du resident n'est pas dans la grille", file=sys.stderr)
             return False
     return True
-#Coherence des positions avec la grille
+#Après avoir confirmé l'appartenance à la grille, on verifie la coherence des positions avec la grille
 def verifier_coherence_avec_grille(carte):
     position_robot = carte["depart_robot"]
     position_dict = carte["dictionnaire"]["position"]
